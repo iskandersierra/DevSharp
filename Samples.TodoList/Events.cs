@@ -4,8 +4,6 @@ namespace Samples.TodoList
 {
     public static class Events
     {
-        #region [ Events ]
-
         [AggregateEvent(IsCreation = true)]
         public class Created
         {
@@ -54,15 +52,15 @@ namespace Samples.TodoList
             public int Id { get; }
         }
 
-        [AggregateEvent]
-        public class AllRemoved
-        {
-        }
+        //[AggregateEvent]
+        //public class AllRemoved
+        //{
+        //}
 
-        [AggregateEvent]
-        public class AllDoneRemoved
-        {
-        }
+        //[AggregateEvent]
+        //public class AllDoneRemoved
+        //{
+        //}
 
         [AggregateEvent]
         public class Checked
@@ -77,17 +75,15 @@ namespace Samples.TodoList
             public bool IsDone { get; }
         }
 
-        [AggregateEvent]
-        public class AllChecked
-        {
-            public AllChecked(bool isDone)
-            {
-                IsDone = isDone;
-            }
+        //[AggregateEvent]
+        //public class AllChecked
+        //{
+        //    public AllChecked(bool isDone)
+        //    {
+        //        IsDone = isDone;
+        //    }
 
-            public bool IsDone { get; }
-        }
-
-        #endregion
+        //    public bool IsDone { get; }
+        //}
     }
 }

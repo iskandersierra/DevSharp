@@ -20,30 +20,30 @@ namespace Samples.TodoList
                 1);
         }
 
-        public State OnEvent(Events.AllChecked e, State s)
-        {
-            return new State(
-                s.Title,
-                s.Tasks.Select(t => t.IsDone == e.IsDone ? t : new TodoTask(t.Id, t.Description, e.IsDone))
-                    .ToImmutableList(),
-                s.NextId);
-        }
+        //public State OnEvent(Events.AllChecked e, State s)
+        //{
+        //    return new State(
+        //        s.Title,
+        //        s.Tasks.Select(t => t.IsDone == e.IsDone ? t : new TodoTask(t.Id, t.Description, e.IsDone))
+        //            .ToImmutableList(),
+        //        s.NextId);
+        //}
 
-        public State OnEvent(Events.AllDoneRemoved e, State s)
-        {
-            return new State(
-                s.Title,
-                s.Tasks.Where(t => !t.IsDone).ToImmutableList(),
-                s.NextId);
-        }
+        //public State OnEvent(Events.AllDoneRemoved e, State s)
+        //{
+        //    return new State(
+        //        s.Title,
+        //        s.Tasks.Where(t => !t.IsDone).ToImmutableList(),
+        //        s.NextId);
+        //}
 
-        public State OnEvent(Events.AllRemoved e, State s)
-        {
-            return new State(
-                s.Title,
-                ImmutableList<TodoTask>.Empty,
-                s.NextId); // It could be 1 again but this is not a good practice
-        }
+        //public State OnEvent(Events.AllRemoved e, State s)
+        //{
+        //    return new State(
+        //        s.Title,
+        //        ImmutableList<TodoTask>.Empty,
+        //        s.NextId); // It could be 1 again but this is not a good practice
+        //}
 
         public State OnEvent(Events.Checked e, State s)
         {
@@ -93,33 +93,33 @@ namespace Samples.TodoList
 
         public IEnumerable<object> WhenCommand(Commands.CheckAll c, State s)
         {
-            if (s.Tasks.All(t => t.IsDone == c.IsDone))
-                yield return new NothingHappened();
-            else
-                yield return new Events.AllChecked(c.IsDone);
+            return s.Tasks
+                .Where(t => t.IsDone != c.IsDone)
+                .Select(t => new Events.Checked(t.Id, c.IsDone));
+            //if (s.Tasks.Any(t => t.IsDone != c.IsDone))
+            //    yield return new Events.AllChecked(c.IsDone);
         }
 
         public IEnumerable<object> WhenCommand(Commands.RemoveAllDone c, State s)
         {
-            if (s.Tasks.All(t => !t.IsDone))
-                yield return new NothingHappened();
-            else
-                yield return new Events.AllDoneRemoved();
+            return s.Tasks
+                .Where(t => t.IsDone)
+                .Select(t => new Events.TaskRemoved(t.Id));
+            //if (s.Tasks.Any(t => t.IsDone))
+            //    yield return new Events.AllDoneRemoved();
         }
 
         public IEnumerable<object> WhenCommand(Commands.RemoveAll c, State s)
         {
-            if (!s.Tasks.Any())
-                yield return new NothingHappened();
-            else
-                yield return new Events.AllRemoved();
+            return s.Tasks
+                .Select(t => new Events.TaskRemoved(t.Id));
+            //if (s.Tasks.Any())
+            //    yield return new Events.AllRemoved();
         }
 
         public IEnumerable<object> WhenCommand(Commands.Check c, State s)
         {
-            if (s.Tasks.All(t => t.Id != c.Id || t.IsDone == c.IsDone))
-                yield return new NothingHappened();
-            else
+            if (s.Tasks.Any(t => t.Id == c.Id && t.IsDone != c.IsDone))
                 yield return new Events.Checked(c.Id, c.IsDone);
         }
 
@@ -130,17 +130,13 @@ namespace Samples.TodoList
 
         public IEnumerable<object> WhenCommand(Commands.RemoveTask c, State s)
         {
-            if (s.Tasks.All(t => t.Id != c.Id))
-                yield return new NothingHappened();
-            else
+            if (s.Tasks.Any(t => t.Id == c.Id))
                 yield return new Events.TaskRemoved(c.Id);
         }
 
         public IEnumerable<object> WhenCommand(Commands.UpdateTask c, State s)
         {
-            if (s.Tasks.All(t => t.Id != c.Id || t.Description == c.Description))
-                yield return new NothingHappened();
-            else
+            if (s.Tasks.Any(t => t.Id == c.Id && t.Description != c.Description))
                 yield return new Events.TaskUpdated(c.Id, c.Description);
         }
 
