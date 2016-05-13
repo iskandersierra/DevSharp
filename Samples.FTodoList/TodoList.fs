@@ -97,7 +97,3 @@ let onEvent (event, state) = // Some ({ title = title; nextId = 1; tasks = [] })
 
     | _ ->
         None
-
-
-
-    
