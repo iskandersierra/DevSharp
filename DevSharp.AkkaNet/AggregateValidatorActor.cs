@@ -45,7 +45,7 @@ namespace DevSharp.AkkaNet
             private readonly ReadOnlyDictionary<string, object> EmptyProperties =
                 new ReadOnlyDictionary<string, object>(new Dictionary<string, object>());
 
-            protected ValidateCommand(
+            public ValidateCommand(
                 object command,
                 IReadOnlyDictionary<string, object> properties)
             {

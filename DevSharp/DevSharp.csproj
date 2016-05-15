@@ -51,7 +51,10 @@
   <ItemGroup>
     <Compile Include="Annotations\AggregateRoot.cs" />
     <Compile Include="Domain\CommandPrecondition.cs" />
+    <Compile Include="Domain\OperationFailed.cs" />
     <Compile Include="Domain\IAggregateClass.cs" />
+    <Compile Include="Domain\OperationCancelled.cs" />
+    <Compile Include="Domain\ValidationFailed.cs" />
     <Compile Include="Messaging\CommittedAggregateEvent.cs" />
     <Compile Include="Messaging\FindCommandHandlerResult.cs" />
     <Compile Include="Messaging\HandleCommandContext.cs" />
