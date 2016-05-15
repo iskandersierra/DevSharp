@@ -1,7 +1,7 @@
 ﻿using DevSharp.Annotations;
 using FluentValidation.Results;
 
-namespace DevSharp.Domain
+namespace DevSharp.Messaging
 {
     [AggregateEvent(IsPure = true)]
     public class ValidationFailed

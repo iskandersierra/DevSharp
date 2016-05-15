@@ -1,6 +1,6 @@
 ﻿using DevSharp.Annotations;
 
-namespace DevSharp.Domain
+namespace DevSharp.Messaging
 {
     [AggregateEvent(IsPure = true)]
     public class NothingHappened

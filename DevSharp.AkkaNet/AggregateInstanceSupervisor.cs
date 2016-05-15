@@ -154,12 +154,11 @@ namespace DevSharp.AkkaNet
         {
             var validateMessage = new AggregateValidatorActor.ValidateCommand(message.Command, message.Properties);
             var validateTask = validators.Ask<AggregateValidatorActor.ValidatedCommand>(validateMessage);
-            var self = Self;
             var sender = Sender;
             validateTask.ContinueWith(vt =>
             {
                 if (vt.IsFaulted)
-                    sender.Tell(new OperationFailed(vt.Exception), ActorRefs.NoSender);
+                    sender.Tell(new Status.Failure(vt.Exception), ActorRefs.NoSender);
                 else if (vt.IsCanceled)
                     sender.Tell(new OperationCancelled(), ActorRefs.NoSender);
                 else if (!vt.Result.Result.IsValid)
