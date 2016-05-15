@@ -1,7 +1,12 @@
-﻿namespace DevSharp.Domain
+﻿using System.Collections.Generic;
+using FluentValidation.Results;
+
+namespace DevSharp.Domain
 {
     public interface IAggregateClass
     {
-        object ApplyEvent(object @event, object currentState);
+        ValidationResult ValidateCommand(object command);
+        IEnumerable<object> ExecuteCommand(object currentState, object command);
+        object ApplyEvent(object currentState, object @event);
     }
 }

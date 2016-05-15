@@ -4,6 +4,6 @@ namespace DevSharp.Messaging
 {
     public interface IEventStreamReader
     {
-        IObservable<AggregateCommit> LoadAggregate(string identifier, bool withSnapshot);
+        IObservable<CommittedAggregateEvent> LoadEvents(string identifier, bool withSnapshot);
     }
 }
