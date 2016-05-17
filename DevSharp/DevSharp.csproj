@@ -52,6 +52,7 @@
     <Compile Include="Annotations\AggregateRoot.cs" />
     <Compile Include="Domain\CommandPrecondition.cs" />
     <Compile Include="Domain\IAggregateClass.cs" />
+    <Compile Include="Domain\IsAllRightValidator.cs" />
     <Compile Include="Messaging\OperationCancelled.cs" />
     <Compile Include="Messaging\ValidationFailed.cs" />
     <Compile Include="Messaging\CommittedAggregateEvent.cs" />

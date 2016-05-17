@@ -1,0 +1,100 @@
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using Akka;
+using Akka.Actor;
+using Akka.Routing;
+using DevSharp.Domain;
+using DevSharp.Messaging;
+
+namespace DevSharp.AkkaNet
+{
+    public class AggregateClassSupervisor :
+        UntypedActor
+    {
+        private readonly IAggregateClass _aggregateClass;
+        private readonly IEventStreamReader _eventReader;
+        private readonly IEventStreamWriter _eventWriter;
+        private readonly int _maxInstances = 100;
+        private IActorRef validators;
+        private IActorRef executor;
+
+        public AggregateClassSupervisor(IAggregateClass aggregateClass, IEventStreamReader eventReader, IEventStreamWriter eventWriter, int maxInstances = 100)
+        {
+            if (aggregateClass == null) throw new ArgumentNullException(nameof(aggregateClass));
+            if (eventReader == null) throw new ArgumentNullException(nameof(eventReader));
+            if (eventWriter == null) throw new ArgumentNullException(nameof(eventWriter));
+            if (maxInstances <= 0) throw new ArgumentOutOfRangeException(nameof(maxInstances));
+            _aggregateClass = aggregateClass;
+            _eventReader = eventReader;
+            _eventWriter = eventWriter;
+            _maxInstances = maxInstances;
+        }
+
+        protected override SupervisorStrategy SupervisorStrategy()
+        {
+            return new OneForOneStrategy(Decider.From(Directive.Escalate));
+        }
+
+        protected override void PreStart()
+        {
+            base.PreStart();
+
+            var validatorProps = Props.Create(() => new AggregateValidatorActor(_aggregateClass))
+                .WithRouter(new SmallestMailboxPool(10)) // TODO: Make configurable
+                .WithSupervisorStrategy(Akka.Actor.SupervisorStrategy.StoppingStrategy);
+
+            validators = Context.ActorOf(validatorProps);
+
+            var executorProps = Props.Create(() => new AggregateInstanceSupervisor(_aggregateClass, _eventReader, _eventWriter, _maxInstances));
+
+            executor = Context.ActorOf(executorProps);
+        }
+
+        protected override void OnReceive(object message)
+        {
+            message.Match()
+                .With<ProcessCommand>(OnProcessCommand)
+                .Default(Unhandled);
+        }
+
+        private void OnProcessCommand(ProcessCommand message)
+        {
+            var validateMessage = new AggregateValidatorActor.ValidateCommand(message.Command, message.Properties);
+            var validateTask = validators.Ask<AggregateValidatorActor.ValidatedCommand>(validateMessage);
+            var sender = Sender;
+            validateTask.ContinueWith(vt =>
+            {
+                if (vt.IsFaulted)
+                    sender.Tell(new Status.Failure(vt.Exception), ActorRefs.NoSender);
+                else if (vt.IsCanceled)
+                    sender.Tell(new OperationCancelled(), ActorRefs.NoSender);
+                else if (!vt.Result.Result.IsValid)
+                    sender.Tell(new ValidationFailed(vt.Result.Result), ActorRefs.NoSender);
+                else
+                    executor.Tell(new AggregateInstanceActor.ProcessCommand(message.Command, message.Properties), sender);
+            });
+        }
+
+        public class ProcessCommand
+        {
+            private readonly ReadOnlyDictionary<string, object> EmptyProperties =
+                new ReadOnlyDictionary<string, object>(new Dictionary<string, object>());
+
+            public ProcessCommand(
+                string identifier,
+                object command,
+                IReadOnlyDictionary<string, object> properties)
+            {
+                if (command == null) throw new ArgumentNullException(nameof(command));
+                Command = command;
+                Identifier = identifier;
+                Properties = properties ?? EmptyProperties;
+            }
+
+            public string Identifier { get; }
+            public object Command { get; }
+            public IReadOnlyDictionary<string, object> Properties { get; }
+        }
+    }
+}

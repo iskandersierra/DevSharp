@@ -20,31 +20,6 @@ namespace Samples.TodoList
                 1);
         }
 
-        //public State OnEvent(Events.AllChecked e, State s)
-        //{
-        //    return new State(
-        //        s.Title,
-        //        s.Tasks.Select(t => t.IsDone == e.IsDone ? t : new TodoTask(t.Id, t.Description, e.IsDone))
-        //            .ToImmutableList(),
-        //        s.NextId);
-        //}
-
-        //public State OnEvent(Events.AllDoneRemoved e, State s)
-        //{
-        //    return new State(
-        //        s.Title,
-        //        s.Tasks.Where(t => !t.IsDone).ToImmutableList(),
-        //        s.NextId);
-        //}
-
-        //public State OnEvent(Events.AllRemoved e, State s)
-        //{
-        //    return new State(
-        //        s.Title,
-        //        ImmutableList<TodoTask>.Empty,
-        //        s.NextId); // It could be 1 again but this is not a good practice
-        //}
-
         public State OnEvent(Events.Checked e, State s)
         {
             return new State(

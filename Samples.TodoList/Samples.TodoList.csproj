@@ -50,6 +50,7 @@
   <ItemGroup>
     <Compile Include="Commands.cs" />
     <Compile Include="Events.cs" />
+    <Compile Include="TodoListAggregateClass.cs" />
     <Compile Include="TodoListClass.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

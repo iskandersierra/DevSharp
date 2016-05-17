@@ -72,6 +72,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AggregateClassesSupervisor.cs" />
+    <Compile Include="AggregateClassSupervisor.cs" />
     <Compile Include="AggregateInstanceActor.cs" />
     <Compile Include="AggregateInstanceSupervisor.cs" />
     <Compile Include="AggregateValidatorActor.cs" />
