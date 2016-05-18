@@ -1,6 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using DevSharp;
 using DevSharp.Annotations;
 using DevSharp.Domain;
 using FluentValidation;
@@ -123,6 +125,8 @@ namespace Samples.TodoList
         {
             public State(string title, ImmutableList<TodoTask> tasks, int nextId)
             {
+                if (tasks == null) throw new ArgumentNullException(nameof(tasks));
+
                 Title = title;
                 Tasks = tasks;
                 NextId = nextId;
@@ -131,6 +135,34 @@ namespace Samples.TodoList
             public string Title { get; }
             public ImmutableList<TodoTask> Tasks { get; }
             public int NextId { get; }
+
+            protected bool Equals(State other)
+            {
+                return string.Equals(Title, other.Title) && Tasks.SequenceEqual(other.Tasks) && NextId == other.NextId;
+            }
+
+            public override bool Equals(object obj)
+            {
+                if (ReferenceEquals(null, obj)) return false;
+                if (ReferenceEquals(this, obj)) return true;
+                if (obj.GetType() != this.GetType()) return false;
+                return Equals((State) obj);
+            }
+
+            public override int GetHashCode()
+            {
+                unchecked
+                {
+                    var hashCode = Title?.GetHashCode() ?? 0;
+                    hashCode = (hashCode*397) ^ NextId;
+                    return hashCode;
+                }
+            }
+
+            public override string ToString()
+            {
+                return this.ToJsonText();
+            }
         }
 
         public class TodoTask
@@ -145,6 +177,35 @@ namespace Samples.TodoList
             public int Id { get; }
             public string Description { get; }
             public bool IsDone { get; }
+
+            protected bool Equals(TodoTask other)
+            {
+                return Id == other.Id && string.Equals(Description, other.Description) && IsDone == other.IsDone;
+            }
+
+            public override bool Equals(object obj)
+            {
+                if (ReferenceEquals(null, obj)) return false;
+                if (ReferenceEquals(this, obj)) return true;
+                if (obj.GetType() != GetType()) return false;
+                return Equals((TodoTask) obj);
+            }
+
+            public override int GetHashCode()
+            {
+                unchecked
+                {
+                    var hashCode = Id;
+                    hashCode = (hashCode*397) ^ (Description?.GetHashCode() ?? 0);
+                    hashCode = (hashCode*397) ^ IsDone.GetHashCode();
+                    return hashCode;
+                }
+            }
+
+            public override string ToString()
+            {
+                return this.ToJsonText();
+            }
         }
 
         #endregion

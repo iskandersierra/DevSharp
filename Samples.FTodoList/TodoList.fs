@@ -5,10 +5,7 @@ type Event =
     | TaskAdded   of int * string
     | TaskUpdated of int * string
     | TaskRemoved of int
-    // | AllRemoved
-    // | AllDoneRemoved
     | Checked     of int * bool
-    // | AllChecked  of bool
 
 type Command =
     | Create      of string
