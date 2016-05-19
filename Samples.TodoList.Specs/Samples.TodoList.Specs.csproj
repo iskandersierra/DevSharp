@@ -73,12 +73,6 @@
     <None Include="App.config" />
     <None Include="packages.config" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Samples.TodoList\Samples.TodoList.csproj">
-      <Project>{0AAF8BD2-A52C-4D14-BB3D-A69C8BDA2078}</Project>
-      <Name>Samples.TodoList</Name>
-    </ProjectReference>
-  </ItemGroup>
   <Choose>
     <When Condition="'$(VisualStudioVersion)' == '10.0' And '$(IsCodedUITest)' == 'True'">
       <ItemGroup>
