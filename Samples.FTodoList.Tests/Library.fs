@@ -78,3 +78,67 @@ type ``TodoList tests``() =
                 let events = processCommand state command
                 in
                 Assert.That (events, Is.EquivalentTo List.Empty )
+
+    [<Test>] member test.
+                ``process RemoveTask from some State should give TaskRemoved`` () =
+                let state = Some { title = "a title"; nextTaskId = 3; tasks = [ { id = 1; text = "task #1"; isChecked = true }; { id = 2; text = "task #2"; isChecked = false } ] }
+                let command = RemoveTask 1
+                let events = processCommand state command
+                in
+                Assert.That (events, Is.EquivalentTo [ TaskRemoved 1 ] )
+
+    [<Test>] member test.
+                ``process RemoveTask of non-existing task from some State should give nothing`` () =
+                let state = Some { title = "a title"; nextTaskId = 3; tasks = [ { id = 1; text = "task #1"; isChecked = true }; { id = 2; text = "task #2"; isChecked = false } ] }
+                let command = RemoveTask 3
+                let events = processCommand state command
+                in
+                Assert.That (events, Is.EquivalentTo List.Empty )
+
+    [<Test>] member test.
+                ``process Check from some State should give Checked`` () =
+                let state = Some { title = "a title"; nextTaskId = 3; tasks = [ { id = 1; text = "task #1"; isChecked = true }; { id = 2; text = "task #2"; isChecked = false } ] }
+                let command = Check 2
+                let events = processCommand state command
+                in
+                Assert.That (events, Is.EquivalentTo [ Checked 2 ] )
+
+    [<Test>] member test.
+                ``process Check of already checked task from some State should give nothing`` () =
+                let state = Some { title = "a title"; nextTaskId = 3; tasks = [ { id = 1; text = "task #1"; isChecked = true }; { id = 2; text = "task #2"; isChecked = false } ] }
+                let command = Check 1
+                let events = processCommand state command
+                in
+                Assert.That (events, Is.EquivalentTo List.Empty )
+
+    [<Test>] member test.
+                ``process Check of non-existing task from some State should give nothing`` () =
+                let state = Some { title = "a title"; nextTaskId = 3; tasks = [ { id = 1; text = "task #1"; isChecked = true }; { id = 2; text = "task #2"; isChecked = false } ] }
+                let command = Check 3
+                let events = processCommand state command
+                in
+                Assert.That (events, Is.EquivalentTo List.Empty )
+
+    [<Test>] member test.
+                ``process Uncheck from some State should give Unchecked`` () =
+                let state = Some { title = "a title"; nextTaskId = 3; tasks = [ { id = 1; text = "task #1"; isChecked = true }; { id = 2; text = "task #2"; isChecked = false } ] }
+                let command = Uncheck 1
+                let events = processCommand state command
+                in
+                Assert.That (events, Is.EquivalentTo [ Unchecked 1 ] )
+
+    [<Test>] member test.
+                ``process Uncheck of already unchecked task from some State should give nothing`` () =
+                let state = Some { title = "a title"; nextTaskId = 3; tasks = [ { id = 1; text = "task #1"; isChecked = true }; { id = 2; text = "task #2"; isChecked = false } ] }
+                let command = Uncheck 2
+                let events = processCommand state command
+                in
+                Assert.That (events, Is.EquivalentTo List.Empty )
+
+    [<Test>] member test.
+                ``process Uncheck of non-existing task from some State should give nothing`` () =
+                let state = Some { title = "a title"; nextTaskId = 3; tasks = [ { id = 1; text = "task #1"; isChecked = true }; { id = 2; text = "task #2"; isChecked = false } ] }
+                let command = Uncheck 3
+                let events = processCommand state command
+                in
+                Assert.That (events, Is.EquivalentTo List.Empty )
