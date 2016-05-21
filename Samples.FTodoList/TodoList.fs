@@ -1,7 +1,7 @@
 module Samples.FTodoList.TodoList
 
 open System
-open DevFSharp
+open DevFSharp.Validations
 
 type Event = 
     | Created      of string            // [ 'text' ]
@@ -39,8 +39,6 @@ and  TodoTask =
         isChecked: bool;
     }
 
-let initialState : State option = None
-
 let processCommand astate command = 
     match astate with
         | None ->
@@ -50,7 +48,7 @@ let processCommand astate command =
                     ]
                 
                 | _ -> 
-                    raise (NotSupportedException "Cannot apply any command to non-existing aggregate")
+                    failProcessCommand astate command
                 
         | Some state ->
             match command with
@@ -93,14 +91,15 @@ let processCommand astate command =
                     |> List.filter (fun t -> t.isChecked) 
                     |> List.map (fun t -> Unchecked t.id)
                 
-                | _ -> raise (NotSupportedException "Cannot apply Create command to an existing aggregate")
+                | _ -> 
+                    failProcessCommand astate command
 
 let receiveEvent astate event =
     match astate with
         | None ->
             match event with
                 | Created title ->
-                    { title = title
+                    Some { title = title
                     ; nextTaskId = 1
                     ; tasks = [] 
                     }
@@ -110,72 +109,79 @@ let receiveEvent astate event =
         | Some state ->
             match event with
                 | TitleUpdated newTitle -> 
-                    { state with 
-                        title = newTitle 
+                    Some { state with 
+                            title = newTitle 
                     } 
                 | TaskAdded (id, text) ->
-                    { state with 
-                        nextTaskId = state.nextTaskId + 1; 
-                        tasks = state.tasks @ [ { id = id; text = text; isChecked = false } ] 
+                    Some { state with 
+                            nextTaskId = state.nextTaskId + 1; 
+                            tasks = state.tasks @ [ { id = id; text = text; isChecked = false } ] 
                     }
                 | TaskUpdated (id, text) ->
                     let mapTask task = 
                         if task.id = id 
                         then { task with text = text } 
                         else task
-                    { state with 
-                        tasks = state.tasks |> List.map mapTask 
+                    Some { state with 
+                            tasks = state.tasks |> List.map mapTask 
                     }
                 | TaskRemoved id ->
-                    { state with 
-                        tasks = state.tasks |> List.filter (fun t -> t.id <> id)
+                    Some { state with 
+                            tasks = state.tasks |> List.filter (fun t -> t.id <> id)
                     }
                 | Checked id ->
                     let mapTask task = 
                         if task.id = id && not task.isChecked 
                         then { task with isChecked = true } 
                         else task
-                    { state with 
-                        tasks = state.tasks |> List.map mapTask 
+                    Some { state with 
+                            tasks = state.tasks |> List.map mapTask 
                     }
                 | Unchecked id ->
                     let mapTask task = 
                         if task.id = id && task.isChecked 
                         then { task with isChecked = false } 
                         else task
-                    { state with 
-                        tasks = state.tasks |> List.map mapTask 
+                    Some { state with 
+                            tasks = state.tasks |> List.map mapTask 
                     }
                 
                 | _ -> raise (NotSupportedException "Cannot apply Created event to an existing aggregate")
 
 let validate command =
+    let validateId id =
+        seq {
+            if id <= 0 
+            then yield memberFailure "id" "Id must be positive"
+        }
+
+    let validateTitle title =
+        seq {
+            if String.IsNullOrEmpty title 
+            then yield memberFailure "title" "Title cannot be empty"
+            else if title.Length < 4 || title.Length > 100 
+                then yield memberFailure "title" "Title length must be between 4 and 100"
+        }
+
+    let validateTaskText text =
+        seq {
+            if String.IsNullOrEmpty text 
+            then yield memberFailure "text" "Task text cannot be empty"
+            else if text.Length < 4 || text.Length > 100 
+                then yield memberFailure "text" "Task text length must be between 4 and 100"
+        }
+
+    in
     match command with
-        | Create title -> 
-            [ Validation (not (String.IsNullOrEmpty title), "Title cannot be empty")
-            ; Validation (4 <= title.Length && title.Length <= 100, "Title length must be between 4 and 100") 
-            ]
-        | UpdateTitle title -> 
-            [ Validation (not (String.IsNullOrEmpty title), "Title cannot be empty")
-            ; Validation (4 <= title.Length && title.Length <= 100, "Title length must be between 4 and 100") 
-            ]
-        | AddTask text ->
-            [ Validation (not (String.IsNullOrEmpty text), "Title cannot be empty")
-            ; Validation (4 <= text.Length && text.Length <= 100, "Title length must be between 4 and 100") 
-            ]
+        | Create title -> validateTitle title
+        | UpdateTitle title -> validateTitle title
+        | AddTask text -> validateTaskText text
         | UpdateTask (id, text) ->
-            [ Validation (id > 0, "Id must be positive")
-            ; Validation (not (String.IsNullOrEmpty text), "Title cannot be empty")
-            ; Validation (4 <= text.Length && text.Length <= 100, "Title length must be between 4 and 100") 
-            ]
-        | RemoveTask id ->
-            [ Validation (id > 0, "Id must be positive")
-            ]
-        | Check id ->
-            [ Validation (id > 0, "Id must be positive") 
-            ]
-        | Uncheck id ->
-            [ Validation (id > 0, "Id must be positive")
-            ]
-        | _ ->
-            []
+            seq { 
+                yield! validateId id
+                yield! validateTaskText text
+            }
+        | RemoveTask id -> validateId id
+        | Check id -> validateId id
+        | Uncheck id -> validateId id
+        | _ -> Seq.empty

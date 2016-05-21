@@ -51,9 +51,11 @@
   <Import Project="$(FSharpTargetsPath)" />
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
-    <Compile Include="Library.fs" />
-    <None Include="Script.fsx" />
+    <Compile Include="TodoListTestHelpers.fs" />
+    <Compile Include="TodoList.ProcessCommandTests.fs" />
+    <Compile Include="TodoList.ReceiveEventTests.fs" />
     <Content Include="packages.config" />
+    <Compile Include="TodoList.ValidateTests.fs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="FSharp.Core">
