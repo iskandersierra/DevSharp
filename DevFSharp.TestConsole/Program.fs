@@ -98,12 +98,24 @@ let testSerialization () =
     printfn "%A" (obj.Equals(tuple, tuple2))
     printfn "%s" tupleType
     
+let testSerializationPerformance () =
+    let times = 1000000
+
+    //let myobj = sampleCommand
+    let myobj = sampleState
+    let startTimeCmd = DateTime.Now
+    let sCmd = [ for i in 0..times -> serializeJson myobj ]
+    let endTimeCmd = DateTime.Now
+    let elapsedCmd = endTimeCmd - startTimeCmd
+    
+    printfn "Serialize union: %fms per op" (elapsedCmd.TotalMilliseconds / float(times))
 
 
 [<EntryPoint>]
 let main argv = 
     // printSimpleTests
 
-    testSerialization()
+    //testSerialization()
+    testSerializationPerformance()
 
     0 // return an integer exit code
