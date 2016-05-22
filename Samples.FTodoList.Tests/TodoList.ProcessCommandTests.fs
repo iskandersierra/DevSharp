@@ -2,6 +2,7 @@
 
 open System
 open NUnit.Framework
+open DevFSharp.NUnitTests.TestHelpers
 open Samples.FTodoList.TodoList
 
 [<TestFixture>]

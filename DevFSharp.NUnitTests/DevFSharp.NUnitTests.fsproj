@@ -5,14 +5,14 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>886cbc3f-1ba7-40c1-9346-f178c685b152</ProjectGuid>
+    <ProjectGuid>c58a6ce2-4c87-4fcf-be79-7ce66a289b17</ProjectGuid>
     <OutputType>Library</OutputType>
-    <RootNamespace>Samples.FTodoList.Tests</RootNamespace>
-    <AssemblyName>Samples.FTodoList.Tests</AssemblyName>
+    <RootNamespace>DevFSharp.NUnitTests</RootNamespace>
+    <AssemblyName>DevFSharp.NUnitTests</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <TargetFSharpCoreVersion>4.4.0.0</TargetFSharpCoreVersion>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    <Name>Samples.FTodoList.Tests</Name>
+    <Name>DevFSharp.NUnitTests</Name>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -22,7 +22,7 @@
     <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
-    <DocumentationFile>bin\Debug\Samples.FTodoList.Tests.XML</DocumentationFile>
+    <DocumentationFile>bin\Debug\DevFSharp.NUnitTests.XML</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -31,7 +31,7 @@
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
-    <DocumentationFile>bin\Release\Samples.FTodoList.Tests.XML</DocumentationFile>
+    <DocumentationFile>bin\Release\DevFSharp.NUnitTests.XML</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
@@ -51,11 +51,9 @@
   <Import Project="$(FSharpTargetsPath)" />
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
-    <Compile Include="TodoListTestHelpers.fs" />
-    <Compile Include="TodoList.ProcessCommandTests.fs" />
-    <Compile Include="TodoList.ReceiveEventTests.fs" />
+    <Compile Include="TestHelpers.fs" />
+    <None Include="Script.fsx" />
     <Content Include="packages.config" />
-    <Compile Include="TodoList.ValidateTests.fs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="FSharp.Core">
@@ -72,19 +70,9 @@
     <Reference Include="System.Numerics" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\DevFSharp.NUnitTests\DevFSharp.NUnitTests.fsproj">
-      <Name>DevFSharp.NUnitTests</Name>
-      <Project>{c58a6ce2-4c87-4fcf-be79-7ce66a289b17}</Project>
-      <Private>True</Private>
-    </ProjectReference>
     <ProjectReference Include="..\DevFSharp\DevFSharp.fsproj">
       <Name>DevFSharp</Name>
       <Project>{a5849750-2d7c-4975-a056-46c6c0c999a1}</Project>
-      <Private>True</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Samples.FTodoList\Samples.FTodoList.fsproj">
-      <Name>Samples.FTodoList</Name>
-      <Project>{d24e17e2-f41f-41d8-8dad-b8a6f18ff635}</Project>
       <Private>True</Private>
     </ProjectReference>
   </ItemGroup>

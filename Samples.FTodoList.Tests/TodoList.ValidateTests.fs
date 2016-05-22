@@ -3,26 +3,11 @@ namespace Samples.FTodoList.Tests
 open System
 open DevFSharp.Validations
 open NUnit.Framework
+open DevFSharp.NUnitTests.TestHelpers
 open Samples.FTodoList.TodoList
 
 [<TestFixture>]
 type ``TodoList validate tests``() = 
-
-    [<Test>] 
-    member test.``AddTask cannot be applied to non-existing TodoList`` () =
-        let command = AddTask "task #1"
-        let state = initialState
-        let message = messageForFailProcessCommand state command
-        in
-        Assert.That ( message, Is.EqualTo "Cannot process command AddTask for non-existing TodoList" )
-
-    [<Test>] 
-    member test.``Create cannot be applied to existing TodoList`` () =
-        let command = Create defaultTitle
-        let state = emptyState
-        let message = messageForFailProcessCommand state command
-        in
-        Assert.That ( message, Is.EqualTo "Cannot process command Create for existing TodoList" )
 
     [<Test>] 
     member test.``validate Create with null title is invalid`` () = 
