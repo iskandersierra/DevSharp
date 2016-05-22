@@ -72,6 +72,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AggregateActors\InstanceActor.cs" />
     <Compile Include="AggregateClassesSupervisor.cs" />
     <Compile Include="AggregateClassSupervisor.cs" />
     <Compile Include="AggregateInstanceActor.cs" />

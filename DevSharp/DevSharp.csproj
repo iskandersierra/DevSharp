@@ -70,6 +70,8 @@
     <Compile Include="Messaging\NothingHappened.cs" />
     <Compile Include="Messaging\UncommittedAggregateEvents.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Serialization\IItemSerializer.cs" />
+    <Compile Include="Serialization\SerializableItem.cs" />
     <Compile Include="SystemExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
