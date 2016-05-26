@@ -6,7 +6,6 @@ open Samples.FTodoList.TodoList
 open DevFSharp.Validations
 open NUnit.Framework
 
-let initialState : State option = None
 let defaultTitle = "Title of todo list"
 let emptyState = Some { title = defaultTitle; nextTaskId = 1; tasks = [] }
 let emptyStateTitle title = Some { title = title; nextTaskId = 1; tasks = [] }

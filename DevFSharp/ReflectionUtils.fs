@@ -24,6 +24,23 @@ let findModuleInnerType (moduleType: Type) containerName attrType defaultName =
     else if candidates.Length > 1
             then raise (TypeLoadException (sprintf "Too many types found for %O on %O (%A)" defaultName containerName candidates))
             else raise (TypeLoadException (sprintf "Could not found type %O on %O" defaultName containerName))
+
+
+let findModuleProperty (moduleType: Type) containerName attrType defaultName =
+    let isTheProperty (p: PropertyInfo) =
+        let attr = p.GetCustomAttributes(attrType, false)
+        attr.Length > 0 || p.Name = defaultName
+
+    let candidates = moduleType.GetProperties(BindingFlags.Static ||| BindingFlags.Public) 
+                    |> Array.toList
+                    |> List.filter isTheProperty
+
+    if candidates.Length = 1
+    then candidates.Head
+    else if candidates.Length > 1
+            then raise (TypeLoadException (sprintf "Too many properties found for %O on %O" defaultName containerName))
+            else raise (TypeLoadException (sprintf "Could not found property %O on %O" defaultName containerName))
+    
     
 let findModuleMethod (moduleType: Type) containerName attrType defaultName (returnType: Type) (paramTypes: Type list) = 
     let isTheMethod (m: MethodInfo) =
@@ -36,7 +53,8 @@ let findModuleMethod (moduleType: Type) containerName attrType defaultName (retu
             m.ReturnType = returnType && 
             System.Linq.Enumerable.SequenceEqual (paramTypes, parameters)
 
-    let candidates = moduleType.GetMethods(BindingFlags.Static ||| BindingFlags.Public) 
+    let methods = moduleType.GetMethods(BindingFlags.Static ||| BindingFlags.Public)
+    let candidates = methods 
                     |> Array.toList
                     |> List.filter isTheMethod
 

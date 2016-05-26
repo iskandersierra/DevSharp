@@ -11,30 +11,29 @@ type TaskText               = string
 
 [<AggregateEvents>]
 type Event = 
-    | WasCreated            of TodoListTitle
-    | TitleWasUpdated       of TodoListTitle
-    | TaskWasAdded          of TaskId * TaskText
-    | TaskWasUpdated        of TaskId * TaskText
-    | TaskWasRemoved        of TaskId
-    | TaskWasChecked        of TaskId
-    | TaskWasUnchecked      of TaskId
+| WasCreated            of TodoListTitle
+| TitleWasUpdated       of TodoListTitle
+| TaskWasAdded          of TaskId * TaskText
+| TaskWasUpdated        of TaskId * TaskText
+| TaskWasRemoved        of TaskId
+| TaskWasChecked        of TaskId
+| TaskWasUnchecked      of TaskId
     
 [<AggregateCommands>]
 type Command =
-    | Create                of TodoListTitle
-    | UpdateTitle           of TodoListTitle
-    | AddTask               of TaskText
-    | UpdateTask            of TaskId * TaskText
-    | RemoveTask            of TaskId
-    | CheckTask             of TaskId
-    | UncheckTask           of TaskId
-    | RemoveAllTasks
-    | RemoveAllCheckedTasks
-    | CheckAllTasks
-    | UncheckAllTasks
+| Create                of TodoListTitle
+| UpdateTitle           of TodoListTitle
+| AddTask               of TaskText
+| UpdateTask            of TaskId * TaskText
+| RemoveTask            of TaskId
+| CheckTask             of TaskId
+| UncheckTask           of TaskId
+| RemoveAllTasks
+| RemoveAllCheckedTasks
+| CheckAllTasks
+| UncheckAllTasks
 
-[<AggregateState>]
-type State =                            // { title: 'Ejemplo', nextTaskId: 3, tasks: [ {id: 1, text: 'abc', isChecked: true}, {id: 2, text: 'def', isChecked: false} ] }
+type State =
     { 
         title:      TodoListTitle; 
         nextTaskId: TaskId; 
@@ -47,9 +46,13 @@ and  TodoTask =
         isChecked: bool;
     }
 
+[<AggregateInitialState>]
+let initialState: State option = 
+    None
+
 [<ProcessAggregateCommand>]
-let act astate command =
-    match (astate, command) with
+let act command state =
+    match (state, command) with
         | (None, Create title) -> 
             [ WasCreated title ]
 
@@ -101,8 +104,8 @@ let act astate command =
             |> List.map (fun t -> TaskWasUnchecked t.id)
 
 [<ReceiveAggregateEvent>]
-let apply astate event =
-    match (astate, event) with
+let apply event state =
+    match (state, event) with
     | (None, WasCreated title) ->
         Some { 
             title = title; 

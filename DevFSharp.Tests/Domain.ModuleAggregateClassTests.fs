@@ -32,44 +32,44 @@ type ``ModuleAggregateClass tests``() =
 
     [<Test>] 
     member test.``acting on a Create command over None should return a WasCreated event`` () =
-        let result = aggregateClass.processCommand None (Create "TodoList title")
+        let result = aggregateClass.processCommand (Create "TodoList title") None
         Assert.That(result, Is.EquivalentTo([ WasCreated "TodoList title" ]))
 
     [<Test>] 
     member test.``acting on a Create command over Some state should fail`` () =
-        let astate = Some { title = ""; nextTaskId = 1; tasks = [] }
-        let call = fun () -> aggregateClass.processCommand astate (Create "TodoList title") |> ignore
+        let state = Some { title = ""; nextTaskId = 1; tasks = [] }
+        let call = fun () -> aggregateClass.processCommand (Create "TodoList title") state |> ignore
         Assert.That(call, Throws.TypeOf<MatchFailureException>())
 
     [<Test>] 
     member test.``acting on a UpdateTitle command over Some state should return a TitleWasUpdated event`` () =
-        let astate = Some { title = ""; nextTaskId = 1; tasks = [] }
-        let result = aggregateClass.processCommand astate (UpdateTitle "TodoList title")
+        let state = Some { title = ""; nextTaskId = 1; tasks = [] }
+        let result = aggregateClass.processCommand (UpdateTitle "TodoList title") state
         Assert.That(result, Is.EquivalentTo([ TitleWasUpdated "TodoList title" ]))
 
     [<Test>] 
     member test.``acting on a UpdateTitle command over None state should fail`` () =
-        let call = fun () -> aggregateClass.processCommand None (UpdateTitle "TodoList title") |> ignore
+        let call = fun () -> aggregateClass.processCommand (UpdateTitle "TodoList title") None |> ignore
         Assert.That(call, Throws.TypeOf<MatchFailureException>())
 
     [<Test>] 
     member test.``applying a WasCreated event over None should return Some state`` () =
-        let result = aggregateClass.receiveEvent None (WasCreated "TodoList title")
+        let result = aggregateClass.receiveEvent (WasCreated "TodoList title") None
         Assert.That(result, Is.EqualTo(Some {title = "TodoList title"; nextTaskId = 1; tasks = []}))
 
     [<Test>] 
     member test.``applying a WasCreated event over Some state should fail`` () =
-        let call = fun () -> aggregateClass.receiveEvent emptyState (WasCreated "TodoList title") |> ignore
+        let call = fun () -> aggregateClass.receiveEvent (WasCreated "TodoList title") emptyState |> ignore
         Assert.That(call, Throws.TypeOf<MatchFailureException>())
 
     [<Test>] 
     member test.``applying a TitleWasUpdated event over Some state should return Some state`` () =
-        let result = aggregateClass.receiveEvent emptyState (TitleWasUpdated "New TodoList title")
+        let result = aggregateClass.receiveEvent (TitleWasUpdated "New TodoList title") emptyState
         Assert.That(result, Is.EqualTo(Some {title = "New TodoList title"; nextTaskId = 1; tasks = []}))
 
     [<Test>] 
     member test.``applying a TitleWasUpdated event over None should fail`` () =
-        let call = fun () -> aggregateClass.receiveEvent None (TitleWasUpdated "New TodoList title") |> ignore
+        let call = fun () -> aggregateClass.receiveEvent (TitleWasUpdated "New TodoList title") None |> ignore
         Assert.That(call, Throws.TypeOf<MatchFailureException>())
 
 

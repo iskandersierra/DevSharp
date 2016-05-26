@@ -31,3 +31,7 @@ type ReceiveAggregateEventAttribute() =
 [<AttributeUsageAttribute(AttributeTargets.Method, Inherited = false, AllowMultiple = false)>]
 type ValidateAggregateCommandAttribute() =
     inherit Attribute()
+
+[<AttributeUsageAttribute(AttributeTargets.Method, Inherited = false, AllowMultiple = false)>]
+type AggregateInitialStateAttribute() =
+    inherit Attribute()

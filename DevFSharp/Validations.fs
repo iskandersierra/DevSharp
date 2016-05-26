@@ -40,12 +40,12 @@ let memberFailure ``member`` message = Failure (message, MemberFailure ``member`
 
 let exceptionFailure (ex: System.Exception) = Failure (ex.Message, ExceptionFailure ex)
 
-let messageForFailProcessCommand (astate: 'state option) command =
+let messageForFailProcessCommand (state: 'state option) command =
     let commandName = command.GetType().Name
     let stateName = 
         let stateType = typedefof<'state>
         let moduleName = stateType.DeclaringType.Name
-        match astate with
+        match state with
             | None ->
                 String.concat " " ["non-existing"; moduleName]
             | Some state ->
@@ -55,5 +55,5 @@ let messageForFailProcessCommand (astate: 'state option) command =
     in
     String.concat " " ["Cannot process command"; commandName; "for"; stateName]
 
-let failProcessCommand (astate: 'state option) command =
-    raise (System.NotSupportedException (messageForFailProcessCommand astate command))
+let failProcessCommand (state: 'state option) command =
+    raise (System.NotSupportedException (messageForFailProcessCommand state command))

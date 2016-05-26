@@ -48,7 +48,8 @@
     <Compile Include="Annotations.fs" />
     <Compile Include="Validations.fs" />
     <Compile Include="Serialization.fs" />
-    <Compile Include="Domain.fs" />
+    <Compile Include="IAggregateClass.fs" />
+    <Compile Include="ModuleAggregateClass.fs" />
     <None Include="Script.fsx" />
   </ItemGroup>
   <PropertyGroup>
