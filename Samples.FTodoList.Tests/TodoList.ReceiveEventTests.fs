@@ -6,78 +6,78 @@ open DevFSharp.NUnitTests.TestHelpers
 open Samples.FTodoList.TodoList
 
 [<TestFixture>]
-type ``TodoList receiveEvent tests``() = 
+type ``TodoList apply tests``() = 
 
     [<Test>] 
-    member test.``receive non-Created from None should not be supported`` () =
+    member test.``receive non-WasCreated from None should not be supported`` () =
         testReceiveEventIsInvalid
-            receiveEvent
+            apply
             initialState
-            ( TaskAdded (3, "Task description") )
+            ( TaskWasAdded (3, "Task description") )
 
     [<Test>] 
-    member test.``receive Created from some State should not be supported`` () =
+    member test.``receive WasCreated from some State should not be supported`` () =
         testReceiveEventIsInvalid
-            receiveEvent
+            apply
             emptyState
-            ( Created defaultTitle )
+            ( WasCreated defaultTitle )
 
     [<Test>] 
-    member test.``receive Created from None should give some State`` () =
+    member test.``receive WasCreated from None should give some State`` () =
         testReceiveEventIsValid
-            receiveEvent
+            apply
             initialState
-            ( Created defaultTitle )
+            ( WasCreated defaultTitle )
             emptyState
 
     [<Test>] 
-    member test.``receive TitleUpdated from some State should give some State`` () =
+    member test.``receive TitleWasUpdated from some State should give some State`` () =
         testReceiveEventIsValid
-            receiveEvent
+            apply
             emptyState
-            ( TitleUpdated "New title" )
+            ( TitleWasUpdated "New title" )
             ( emptyStateTitle "New title" )
 
     [<Test>] 
-    member test.``receive TaskAdded from some State should give some State`` () =
+    member test.``receive TaskWasAdded from some State should give some State`` () =
         testReceiveEventIsValid
-            receiveEvent
+            apply
             ( Some (createState [true; false]) )
-            ( TaskAdded (3, "task #3") )
+            ( TaskWasAdded (3, "task #3") )
             ( Some (createState [true; false; false]) )
 
     [<Test>] 
-    member test.``receive TaskUpdated from some State should give some State`` () =
+    member test.``receive TaskWasUpdated from some State should give some State`` () =
         let state = createState [true; false]
         testReceiveEventIsValid
-            receiveEvent
+            apply
             ( Some state )
-            ( TaskUpdated (1, "new task #1") )
+            ( TaskWasUpdated (1, "new task #1") )
             ( Some { state with tasks = state.tasks |> List.map (fun t -> if t.id = 1 then {t with text = "new task #1"} else t) } )
 
     [<Test>] 
-    member test.``receive TaskRemoved from some State should give some State`` () =
+    member test.``receive TaskWasRemoved from some State should give some State`` () =
         let state = createState [true; false]
         testReceiveEventIsValid
-            receiveEvent
+            apply
             ( Some state )
-            ( TaskRemoved 1 )
+            ( TaskWasRemoved 1 )
             ( Some { state with tasks = state.tasks |> List.filter (fun t -> t.id <> 1) } )
 
     [<Test>] 
-    member test.``receive Checked from some State should give some State`` () =
+    member test.``receive TaskWasChecked from some State should give some State`` () =
         let state = createState [true; false]
         testReceiveEventIsValid
-            receiveEvent
+            apply
             ( Some state )
-            ( Checked 2 )
+            ( TaskWasChecked 2 )
             ( Some (createState [true; true]) )
 
     [<Test>] 
-    member test.``receive Unchecked from some State should give some State`` () =
+    member test.``receive TaskWasUnchecked from some State should give some State`` () =
         let state = createState [true; false]
         testReceiveEventIsValid
-            receiveEvent
+            apply
             ( Some state )
-            ( Unchecked 1 )
+            ( TaskWasUnchecked 1 )
             ( Some (createState [false; false]) )

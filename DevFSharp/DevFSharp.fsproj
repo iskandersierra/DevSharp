@@ -47,6 +47,7 @@
     <Compile Include="Validations.fs" />
     <None Include="Script.fsx" />
     <Compile Include="Serialization.fs" />
+    <Compile Include="Annotations.fs" />
   </ItemGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>

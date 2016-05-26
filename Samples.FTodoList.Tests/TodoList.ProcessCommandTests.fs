@@ -6,105 +6,105 @@ open DevFSharp.NUnitTests.TestHelpers
 open Samples.FTodoList.TodoList
 
 [<TestFixture>]
-type ``TodoList processCommand tests``() = 
+type ``TodoList act tests``() = 
 
     [<Test>] 
     member test.``process Create from some State should not be supported`` () =
         testProcessCommandIsInvalid 
-            processCommand
+            act
             emptyState
             ( Create defaultTitle )
 
     [<Test>] 
     member test.``process UpdateTitle from None should not be supported`` () =
         testProcessCommandIsInvalid 
-            processCommand
+            act
             initialState
             ( UpdateTitle "Some new title" )
 
     [<Test>] 
     member test.``process AddTask from None should not be supported`` () =
         testProcessCommandIsInvalid 
-            processCommand
+            act
             initialState
             ( AddTask "Task description" )
 
     [<Test>] 
     member test.``process UpdateTask from None should not be supported`` () =
         testProcessCommandIsInvalid 
-            processCommand
+            act
             initialState
             ( UpdateTask (1, "Task description") )
 
     [<Test>] 
     member test.``process RemoveTask from None should not be supported`` () =
         testProcessCommandIsInvalid 
-            processCommand
+            act
             initialState
             ( RemoveTask 1 )
 
     [<Test>] 
     member test.``process Check from None should not be supported`` () =
         testProcessCommandIsInvalid 
-            processCommand
+            act
             initialState
-            ( Check 1 )
+            ( CheckTask 1 )
 
     [<Test>] 
     member test.``process RemoveAll from None should not be supported`` () =
         testProcessCommandIsInvalid 
-            processCommand
+            act
             initialState
-            RemoveAll
+            RemoveAllTasks
 
     [<Test>] 
     member test.``process RemoveAllChecked from None should not be supported`` () =
         testProcessCommandIsInvalid 
-            processCommand
+            act
             initialState
-            RemoveAllChecked
+            RemoveAllCheckedTasks
 
     [<Test>] 
     member test.``process CheckAll from None should not be supported`` () =
         testProcessCommandIsInvalid 
-            processCommand
+            act
             initialState
-            CheckAll
+            CheckAllTasks
 
     [<Test>] 
     member test.``process UncheckAll from None should not be supported`` () =
         testProcessCommandIsInvalid 
-            processCommand
+            act
             initialState
-            UncheckAll
+            UncheckAllTasks
 
     [<Test>] 
     member test.``process Uncheck from None should not be supported`` () =
         testProcessCommandIsInvalid 
-            processCommand
+            act
             initialState
-            ( Uncheck 1 )
+            ( UncheckTask 1 )
 
     [<Test>] 
     member test.``process Create from None should give Created`` () =
         testProcessCommandIsValid 
-            processCommand
+            act
             initialState
             ( Create defaultTitle )
-            [ Created defaultTitle ]
+            [ WasCreated defaultTitle ]
 
     [<Test>] 
     member test.``process UpdateTitle from some State should give TitleUpdated`` () =
         testProcessCommandIsValid
-            processCommand
+            act
             emptyState
             ( UpdateTitle "New title for todo list" )
-            [ TitleUpdated "New title for todo list" ]
+            [ TitleWasUpdated "New title for todo list" ]
 
     [<Test>] 
     member test.``process UpdateTitle with same title  from some State should give nothing`` () =
         testProcessCommandIsValid
-            processCommand
+            act
             emptyState
             ( UpdateTitle defaultTitle )
             List.empty
@@ -112,23 +112,23 @@ type ``TodoList processCommand tests``() =
     [<Test>] 
     member test.``process AddTask from some State should give TaskAdded`` () =
         testProcessCommandIsValid
-            processCommand
+            act
             emptyState
             ( AddTask "New task" )
-            [ TaskAdded (1, "New task") ]
+            [ TaskWasAdded (1, "New task") ]
 
     [<Test>] 
     member test.``process UpdateTask from some State should give TaskUpdated`` () =
         testProcessCommandIsValid 
-            processCommand
+            act
             ( Some (createState [true; false]) )
             ( UpdateTask (1, "New task") )
-            [ TaskUpdated (1, "New task") ]
+            [ TaskWasUpdated (1, "New task") ]
 
     [<Test>] 
     member test.``process UpdateTask of non-existing task from some State should give nothing`` () =
         testProcessCommandIsValid
-            processCommand
+            act
             ( Some (createState [true; false]) )
             ( UpdateTask (3, "New task") )
             List.empty
@@ -136,7 +136,7 @@ type ``TodoList processCommand tests``() =
     [<Test>] 
     member test.``process UpdateTask with same text from some State should give nothing`` () =
         testProcessCommandIsValid
-            processCommand
+            act
             ( Some (createState [true; false]) )
             ( UpdateTask (2, "task #2") )
             List.empty
@@ -144,15 +144,15 @@ type ``TodoList processCommand tests``() =
     [<Test>] 
     member test.``process RemoveTask from some State should give TaskRemoved`` () =
         testProcessCommandIsValid
-            processCommand
+            act
             ( Some (createState [true; false]) )
             ( RemoveTask 1 )
-            [ TaskRemoved 1 ]
+            [ TaskWasRemoved 1 ]
 
     [<Test>] 
     member test.``process RemoveTask of non-existing task from some State should give nothing`` () =
         testProcessCommandIsValid
-            processCommand
+            act
             ( Some (createState [true; false]) )
             ( RemoveTask 3 )
             List.empty
@@ -160,136 +160,136 @@ type ``TodoList processCommand tests``() =
     [<Test>] 
     member test.``process Check from some State should give Checked`` () =
         testProcessCommandIsValid
-            processCommand
+            act
             ( Some (createState [true; false]) )
-            ( Check 2 )
-            [ Checked 2 ]
+            ( CheckTask 2 )
+            [ TaskWasChecked 2 ]
 
     [<Test>] 
     member test.``process Check of already checked task from some State should give nothing`` () =
         testProcessCommandIsValid
-            processCommand
+            act
             ( Some (createState [true; false]) )
-            ( Check 1 )
+            ( CheckTask 1 )
             List.empty
 
     [<Test>] 
     member test.``process Check of non-existing task from some State should give nothing`` () =
         testProcessCommandIsValid
-            processCommand
+            act
             ( Some (createState [true; false]) )
-            ( Check 3 )
+            ( CheckTask 3 )
             List.empty
 
     [<Test>] 
     member test.``process Uncheck from some State should give Unchecked`` () =
         testProcessCommandIsValid
-            processCommand
+            act
             ( Some (createState [true; false]) )
-            ( Uncheck 1 )
-            [ Unchecked 1 ]
+            ( UncheckTask 1 )
+            [ TaskWasUnchecked 1 ]
 
     [<Test>] 
     member test.``process Uncheck of already unchecked task from some State should give nothing`` () =
         testProcessCommandIsValid
-            processCommand
+            act
             ( Some (createState [true; false]) )
-            ( Uncheck 2 )
+            ( UncheckTask 2 )
             List.empty
 
     [<Test>] 
     member test.``process Uncheck of non-existing task from some State should give nothing`` () =
         testProcessCommandIsValid
-            processCommand
+            act
             ( Some (createState [true; false]) )
-            ( Uncheck 3 )
+            ( UncheckTask 3 )
             List.empty
 
     [<Test>] 
     member test.``process RemoveAll from some State should give many TaskRemoved`` () =
         testProcessCommandIsValid
-            processCommand
+            act
             ( Some (createState [true; false]) )
-            RemoveAll
-            [ TaskRemoved 1; TaskRemoved 2 ]
+            RemoveAllTasks
+            [ TaskWasRemoved 1; TaskWasRemoved 2 ]
 
     [<Test>] 
     member test.``process RemoveAll from some Empty list should give nothing`` () =
         testProcessCommandIsValid
-            processCommand
+            act
             emptyState
-            RemoveAll
+            RemoveAllTasks
             List.empty
 
     [<Test>] 
     member test.``process RemoveAllChecked from some State should give many TaskRemoved`` () =
         testProcessCommandIsValid
-            processCommand
+            act
             ( Some (createState [true; false; true]) )
-            RemoveAllChecked
-            [ TaskRemoved 1; TaskRemoved 3 ]
+            RemoveAllCheckedTasks
+            [ TaskWasRemoved 1; TaskWasRemoved 3 ]
 
     [<Test>] 
     member test.``process RemoveAllChecked from some State with no checked tasks should give nothing`` () =
         testProcessCommandIsValid
-            processCommand
+            act
             ( Some (createState [false; false]) )
-            RemoveAllChecked
+            RemoveAllCheckedTasks
             List.empty
 
     [<Test>] 
     member test.``process RemoveAllChecked from some Empty list should give nothing`` () =
         testProcessCommandIsValid
-            processCommand
+            act
             emptyState
-            RemoveAllChecked
+            RemoveAllCheckedTasks
             List.empty
 
     [<Test>] 
     member test.``process CheckAll from some State should give many Checked`` () =
         testProcessCommandIsValid
-            processCommand
+            act
             ( Some (createState [false; true; false]) )
-            CheckAll
-            [ Checked 1; Checked 3 ]
+            CheckAllTasks
+            [ TaskWasChecked 1; TaskWasChecked 3 ]
 
     [<Test>] 
     member test.``process CheckAll from some State with no checked tasks should give nothing`` () =
         testProcessCommandIsValid
-            processCommand
+            act
             ( Some (createState [true; true]) )
-            CheckAll
+            CheckAllTasks
             List.empty
 
     [<Test>] 
     member test.``process CheckAll from some Empty list should give nothing`` () =
         testProcessCommandIsValid
-            processCommand
+            act
             emptyState
-            CheckAll
+            CheckAllTasks
             List.empty
 
     [<Test>] 
     member test.``process UncheckAll from some State should give many Unchecked`` () =
         testProcessCommandIsValid
-            processCommand
+            act
             ( Some (createState [true; false; true]) )
-            UncheckAll
-            [ Unchecked 1; Unchecked 3 ]
+            UncheckAllTasks
+            [ TaskWasUnchecked 1; TaskWasUnchecked 3 ]
 
     [<Test>] 
     member test.``process UncheckAll from some State with no unchecked tasks should give nothing`` () =
         testProcessCommandIsValid
-            processCommand
+            act
             ( Some (createState [false; false]) )
-            UncheckAll
+            UncheckAllTasks
             List.empty
 
     [<Test>] 
     member test.``process UncheckAll from some Empty list should give nothing`` () =
         testProcessCommandIsValid
-            processCommand
+            act
             emptyState
-            UncheckAll
+            UncheckAllTasks
             List.empty
                
