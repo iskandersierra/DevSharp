@@ -6,20 +6,27 @@ open FSharp.Reflection
 type ValidationMessage  = string
 type MemberName         = string
 
-type ValidationResult = 
+type ValidationItem = 
     | Valid
-    | Failure           of ValidationMessage
-    | MemberFailure     of ValidationMessage * MemberName
-    | ExceptionFailure  of ValidationMessage * Exception
+    | Information       of ValidationMessage
+    | Warning           of ValidationMessage
+    | Failure           of ValidationMessage * FailureType
+and FailureType =
+    | UnknownFailure
+    | MemberFailure     of MemberName
+    | ExceptionFailure  of Exception
 
-type ValidationError =
-    ValidationError     of ValidationResult list
+type ValidationResult =
+    {
+        ValidationError : ValidationItem list;
+        IsValid : bool;
+    }
 
-let failure message = Failure message
+let failure message = Failure (message, UnknownFailure)
 
-let memberFailure ``member`` message = MemberFailure (message, ``member``)
+let memberFailure ``member`` message = Failure (message, MemberFailure ``member``)
 
-let exceptionFailure (ex: System.Exception) = ExceptionFailure (ex.Message, ex)
+let exceptionFailure (ex: System.Exception) = Failure (ex.Message, ExceptionFailure ex)
 
 let messageForFailProcessCommand (astate: 'state option) command =
     let commandName = command.GetType().Name

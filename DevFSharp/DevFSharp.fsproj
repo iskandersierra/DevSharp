@@ -47,6 +47,7 @@
     <Compile Include="Annotations.fs" />
     <Compile Include="Validations.fs" />
     <Compile Include="Serialization.fs" />
+    <Compile Include="Domain.fs" />
     <None Include="Script.fsx" />
   </ItemGroup>
   <PropertyGroup>
