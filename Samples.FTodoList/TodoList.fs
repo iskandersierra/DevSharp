@@ -47,7 +47,7 @@ and  TodoTask =
     }
 
 [<AggregateInitialState>]
-let initialState: State option = 
+let init: State option = 
     None
 
 [<ProcessAggregateCommand>]

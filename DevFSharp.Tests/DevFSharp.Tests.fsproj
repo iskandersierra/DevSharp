@@ -51,7 +51,10 @@
   <Import Project="$(FSharpTargetsPath)" />
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
-    <Compile Include="Domain.ModuleAggregateClassTests.fs" />
+    <Compile Include="ModuleAggregateClassEchoerTests.fs" />
+    <Compile Include="ModuleAggregateClassPingPongTests.fs" />
+    <Compile Include="ModuleAggregateClassCounterTests.fs" />
+    <Compile Include="ModuleAggregateClassTodoListTests.fs" />
     <None Include="Script.fsx" />
     <Content Include="packages.config" />
   </ItemGroup>

@@ -19,77 +19,77 @@ type ``TodoList act tests``() =
     member test.``process UpdateTitle from None should not be supported`` () =
         testProcessCommandIsInvalid 
             act
-            initialState
+            init
             ( UpdateTitle "Some new title" )
 
     [<Test>] 
     member test.``process AddTask from None should not be supported`` () =
         testProcessCommandIsInvalid 
             act
-            initialState
+            init
             ( AddTask "Task description" )
 
     [<Test>] 
     member test.``process UpdateTask from None should not be supported`` () =
         testProcessCommandIsInvalid 
             act
-            initialState
+            init
             ( UpdateTask (1, "Task description") )
 
     [<Test>] 
     member test.``process RemoveTask from None should not be supported`` () =
         testProcessCommandIsInvalid 
             act
-            initialState
+            init
             ( RemoveTask 1 )
 
     [<Test>] 
     member test.``process Check from None should not be supported`` () =
         testProcessCommandIsInvalid 
             act
-            initialState
+            init
             ( CheckTask 1 )
 
     [<Test>] 
     member test.``process RemoveAll from None should not be supported`` () =
         testProcessCommandIsInvalid 
             act
-            initialState
+            init
             RemoveAllTasks
 
     [<Test>] 
     member test.``process RemoveAllChecked from None should not be supported`` () =
         testProcessCommandIsInvalid 
             act
-            initialState
+            init
             RemoveAllCheckedTasks
 
     [<Test>] 
     member test.``process CheckAll from None should not be supported`` () =
         testProcessCommandIsInvalid 
             act
-            initialState
+            init
             CheckAllTasks
 
     [<Test>] 
     member test.``process UncheckAll from None should not be supported`` () =
         testProcessCommandIsInvalid 
             act
-            initialState
+            init
             UncheckAllTasks
 
     [<Test>] 
     member test.``process Uncheck from None should not be supported`` () =
         testProcessCommandIsInvalid 
             act
-            initialState
+            init
             ( UncheckTask 1 )
 
     [<Test>] 
     member test.``process Create from None should give Created`` () =
         testProcessCommandIsValid 
             act
-            initialState
+            init
             ( Create defaultTitle )
             [ WasCreated defaultTitle ]
 

@@ -11,13 +11,25 @@ type StateType   = obj
 
 type IAggregateClass =
 
-    abstract member validateCommand: CommandType -> ValidationResult
+    abstract member validate: CommandType -> ValidationResult
 
-    abstract member initialState: StateType
+    abstract member init: StateType
 
-    abstract member processCommand: StateType -> CommandType -> EventType seq
+    abstract member act: CommandType -> StateType -> EventType seq
 
-    abstract member receiveEvent: StateType -> EventType -> StateType
+    abstract member apply: EventType -> StateType -> StateType
 
+
+type NopAggregateClass() =
+
+    interface IAggregateClass with
+
+        member this.validate command = validationResult []
+
+        member this.init = null
+
+        member this.act command state = Seq.empty
+
+        member this.apply event state = null
 
     

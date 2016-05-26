@@ -12,7 +12,7 @@ type ``TodoList apply tests``() =
     member test.``receive non-WasCreated from None should not be supported`` () =
         testReceiveEventIsInvalid
             apply
-            initialState
+            init
             ( TaskWasAdded (3, "Task description") )
 
     [<Test>] 
@@ -26,7 +26,7 @@ type ``TodoList apply tests``() =
     member test.``receive WasCreated from None should give some State`` () =
         testReceiveEventIsValid
             apply
-            initialState
+            init
             ( WasCreated defaultTitle )
             emptyState
 

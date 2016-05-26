@@ -10,6 +10,8 @@ open DevFSharp.Annotations
 open DevFSharp.Validations
 open DevFSharp.ReflectionUtils
 
+type actDelegate = Func<obj, obj, obj seq>
+
 type ModuleAggregateClass (aggregateModule: Type) =
     
     let aggregateName = aggregateModule.Name
@@ -26,6 +28,7 @@ type ModuleAggregateClass (aggregateModule: Type) =
             containerName
             typedefof<AggregateCommandsAttribute> 
             "Command"
+            false
     
     let eventType = 
         findModuleInnerType
@@ -33,6 +36,7 @@ type ModuleAggregateClass (aggregateModule: Type) =
             containerName
             typedefof<AggregateEventsAttribute> 
             "Event"
+            false
 
 
     let (initialStateValue, stateType) =
@@ -41,7 +45,9 @@ type ModuleAggregateClass (aggregateModule: Type) =
                 aggregateModule
                 containerName
                 typedefof<AggregateInitialStateAttribute> 
-                "initialState"
+                "init"
+                false
+
         (initialStateProperty.GetValue(null), initialStateProperty.PropertyType)
 
     let validateInvoker =
@@ -53,17 +59,22 @@ type ModuleAggregateClass (aggregateModule: Type) =
                 "validate"
                 ( getSeqType typedefof<ValidationItem> )
                 [ commandType; ]
+                true
 
-        // command => MyModule.validate ((MyModule.Command)command).Cast<object>()
-        let commandParameter = Expression.Parameter(typedefof<obj>, "command")
-        let castExpr = Expression.MakeUnary(ExpressionType.ConvertChecked, commandParameter, commandType)
-        let callValidate = Expression.Call(validateCommandMethod, castExpr)
-        let lambdaExpr = Expression.Lambda<Func<obj, ValidationItem seq>>(callValidate, commandParameter)
-        let compiled = lambdaExpr.Compile()
-        compiled
+        match validateCommandMethod with
+        | null ->
+            (fun command -> Seq.empty)
+        | _ ->
+            // command => MyModule.validate ((MyModule.Command)command).Cast<object>()
+            let commandParameter = Expression.Parameter(typedefof<obj>, "command")
+            let castExpr = Expression.MakeUnary(ExpressionType.ConvertChecked, commandParameter, commandType)
+            let callValidate = Expression.Call(validateCommandMethod, castExpr)
+            let lambdaExpr = Expression.Lambda<Func<obj, ValidationItem seq>>(callValidate, commandParameter)
+            let compiled = lambdaExpr.Compile()
+            compiled.Invoke
 
-    let processCommandInvoker =
-        let processCommandMethod = 
+    let actInvoker =
+        let actMethod = 
             findModuleMethod
                 aggregateModule
                 containerName
@@ -71,20 +82,34 @@ type ModuleAggregateClass (aggregateModule: Type) =
                 "act"
                 ( getListType eventType )
                 [ commandType; stateType; ]
+                true
 
-        // (state, command) => MyModule.act ((MyModule.State)state, (MyModule.Command)command).Cast<object>()
+        let paramCount = actMethod.GetParameters().Length
+
         let commandParameter = Expression.Parameter(typedefof<obj>, "command");
         let stateParameter = Expression.Parameter(typedefof<obj>, "state");
-        let castCommandExpr = Expression.MakeUnary(ExpressionType.ConvertChecked, commandParameter, commandType)
-        let castStateExpr = Expression.MakeUnary(ExpressionType.ConvertChecked, stateParameter, stateType)
-        let callAct = Expression.Call(processCommandMethod, castCommandExpr, castStateExpr)
-        let callCast = Expression.Call(getMethodEnumerableCast typedefof<obj>, callAct)
-        let lambdaExpr = Expression.Lambda<Func<obj, obj, obj seq>>(callCast, commandParameter, stateParameter)
-        let compiled = lambdaExpr.Compile()
-        compiled
 
-    let receiveEventInvoker =
-        let receiveEventMethod = 
+        let castCommandExpr = Expression.MakeUnary(ExpressionType.ConvertChecked, commandParameter, commandType)
+        let callAct = 
+            if paramCount = 1 then
+                // (command, state) => MyModule.act ((MyModule.Command)command).Cast<object>()
+                Expression.Call(actMethod, castCommandExpr)
+            else 
+                let castStateExpr = Expression.MakeUnary(ExpressionType.ConvertChecked, stateParameter, stateType)
+                if paramCount = 2 then
+                    // (command, state) => MyModule.act ((MyModule.Command)command, (MyModule.State)state).Cast<object>()
+                    Expression.Call(actMethod, castCommandExpr, castStateExpr)
+                else
+                    raise (NotSupportedException (sprintf "Aggregate function %s cannot have %i parameters" actMethod.Name paramCount))
+
+        let callCast = Expression.Call(getMethodEnumerableCast typedefof<obj>, callAct)
+        let lambdaExpr = Expression.Lambda<actDelegate>(callCast, commandParameter, stateParameter)
+        let compiled = lambdaExpr.Compile()
+        compiled.Invoke
+
+
+    let applyInvoker =
+        let applyMethod = 
             findModuleMethod
                 aggregateModule
                 containerName
@@ -92,41 +117,58 @@ type ModuleAggregateClass (aggregateModule: Type) =
                 "apply"
                 ( stateType )
                 [ eventType; stateType; ]
+                false
 
-        // (state, event) => MyModule.apply ((MyModule.State)state, (MyModule.Event)event)
-        let eventParameter = Expression.Parameter(typedefof<obj>, "event");
-        let stateParameter = Expression.Parameter(typedefof<obj>, "state");
-        let castEventExpr = Expression.MakeUnary(ExpressionType.ConvertChecked, eventParameter, eventType)
-        let castStateExpr = Expression.MakeUnary(ExpressionType.ConvertChecked, stateParameter, stateType)
-        let callApply = Expression.Call(receiveEventMethod, castEventExpr, castStateExpr)
-        let lambdaExpr = Expression.Lambda<Func<obj, obj, obj>>(callApply, eventParameter, stateParameter)
-        let compiled = lambdaExpr.Compile()
-        compiled
+        match applyMethod with
+        | null ->
+            (fun (command, state) -> state)
+        | _ ->
+            let paramCount = applyMethod.GetParameters().Length
+
+            let eventParameter = Expression.Parameter(typedefof<obj>, "event");
+            let stateParameter = Expression.Parameter(typedefof<obj>, "state");
+
+            let castEventExpr = Expression.MakeUnary(ExpressionType.ConvertChecked, eventParameter, eventType)
+            let callApply = 
+                if paramCount = 1 then
+                    // (event, state) => MyModule.apply ((MyModule.Event)event)
+                    Expression.Call(applyMethod, castEventExpr)
+                else 
+                    let castStateExpr = Expression.MakeUnary(ExpressionType.ConvertChecked, stateParameter, stateType)
+                    if paramCount = 2 then
+                        // (event, state) => MyModule.apply ((MyModule.Event), event(MyModule.State)state)
+                        Expression.Call(applyMethod, castEventExpr, castStateExpr)
+                    else
+                        raise (NotSupportedException (sprintf "Aggregate function %s cannot have %i parameters" applyMethod.Name paramCount))
+
+            let lambdaExpr = Expression.Lambda<Func<obj, obj, obj>>(callApply, eventParameter, stateParameter)
+            let compiled = lambdaExpr.Compile()
+            compiled.Invoke
 
 
-    member this.initialState =
+    member this.init =
         initialStateValue
 
-    member this.validateCommand command =
-        let items = validateInvoker.Invoke command
+    member this.validate command =
+        let items = validateInvoker command
         validationResult items
 
-    member this.processCommand state command =
-        processCommandInvoker.Invoke(state, command)
+    member this.act command state =
+        actInvoker(command, state)
 
-    member this.receiveEvent state event =
-        receiveEventInvoker.Invoke(state, event)
+    member this.apply event state =
+        applyInvoker(event, state)
 
 
     interface IAggregateClass with
-        member this.initialState =
-            this.initialState
+        member this.init =
+            this.init
 
-        member this.validateCommand command =
-            this.validateCommand command
+        member this.validate command =
+            this.validate command
 
-        member this.processCommand command state =
-            this.processCommand command state
+        member this.act command state =
+            this.act command state
 
-        member this.receiveEvent event state =
-            this.receiveEvent event state
+        member this.apply event state =
+            this.apply event state
