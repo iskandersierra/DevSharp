@@ -3,9 +3,12 @@ module Samples.FTodoList.TodoList
 open System
 open DevFSharp.Validations
 
+type TodoListTitle = string
+type TaskText = string
+
 type Event = 
-    | Created      of string            // [ 'text' ]
-    | TitleUpdated of string            // [ 'text' ]
+    | Created      of TodoListTitle     // [ 'text' ]
+    | TitleUpdated of TodoListTitle     // [ 'text' ]
     | TaskAdded    of int * string      // [ 1, 'text' ]
     | TaskUpdated  of int * string      // [ 1, 'text' ]
     | TaskRemoved  of int               // [ 1 ]
@@ -14,8 +17,8 @@ type Event =
     
  // POST: http://example.com/api/Samples.TodoList/12345/Create [ 'Ejemplo' ]
 type Command =
-    | Create      of string             // [ 'Ejemplo' ]
-    | UpdateTitle of string             // [ 'Ejemplo2' ]
+    | Create      of TodoListTitle      // [ 'Ejemplo' ]
+    | UpdateTitle of TodoListTitle      // [ 'Ejemplo2' ]
     | AddTask     of string             // [ 'Things to do later' ] 
     | UpdateTask  of int * string       // [ 1, 'More things to do later' ]
     | RemoveTask  of int                // [ 1 ]
@@ -28,7 +31,7 @@ type Command =
 
 type State =                            // { title: 'Ejemplo', nextTaskId: 3, tasks: [ {id: 1, text: 'abc', isChecked: true}, {id: 2, text: 'def', isChecked: false} ] }
     { 
-        title:      string; 
+        title:      TodoListTitle; 
         nextTaskId: int; 
         tasks:      TodoTask list;
     }    
@@ -39,6 +42,10 @@ and  TodoTask =
         isChecked: bool;
     }
 
+//let act astate command =
+//    match command with
+//        | Create title
+
 let processCommand astate command = 
     match astate with
         | None ->
@@ -46,9 +53,9 @@ let processCommand astate command =
                 | Create title ->
                     [ Created title 
                     ]
-                
-                | _ -> 
-                    failProcessCommand astate command
+//                // This will throw a MatchException anyway
+//                | _ -> 
+//                    failProcessCommand astate command
                 
         | Some state ->
             match command with
@@ -90,9 +97,9 @@ let processCommand astate command =
                     state.tasks 
                     |> List.filter (fun t -> t.isChecked) 
                     |> List.map (fun t -> Unchecked t.id)
-                
-                | _ -> 
-                    failProcessCommand astate command
+//                
+//                | _ -> 
+//                    failProcessCommand astate command
 
 let receiveEvent astate event =
     match astate with
@@ -103,8 +110,8 @@ let receiveEvent astate event =
                     ; nextTaskId = 1
                     ; tasks = [] 
                     }
-                
-                | _ -> raise (NotSupportedException "Cannot apply any event to non-existing aggregate")
+//                
+//                | _ -> raise (NotSupportedException "Cannot apply any event to non-existing aggregate")
                 
         | Some state ->
             match event with
@@ -145,8 +152,8 @@ let receiveEvent astate event =
                     Some { state with 
                             tasks = state.tasks |> List.map mapTask 
                     }
-                
-                | _ -> raise (NotSupportedException "Cannot apply Created event to an existing aggregate")
+//                
+//                | _ -> raise (NotSupportedException "Cannot apply Created event to an existing aggregate")
 
 let validate command =
     let validateId id =
@@ -173,15 +180,28 @@ let validate command =
 
     in
     match command with
-        | Create title -> validateTitle title
-        | UpdateTitle title -> validateTitle title
-        | AddTask text -> validateTaskText text
+        | Create title -> 
+            validateTitle title
+        | UpdateTitle title -> 
+            validateTitle title
+        | AddTask text -> 
+            validateTaskText text
         | UpdateTask (id, text) ->
             seq { 
                 yield! validateId id
                 yield! validateTaskText text
             }
-        | RemoveTask id -> validateId id
-        | Check id -> validateId id
-        | Uncheck id -> validateId id
-        | _ -> Seq.empty
+        | RemoveTask id -> 
+            validateId id
+        | Check id -> 
+            validateId id
+        | Uncheck id -> 
+            validateId id
+        | RemoveAll -> 
+            Seq.empty
+        | RemoveAllChecked -> 
+            Seq.empty
+        | CheckAll -> 
+            Seq.empty
+        | UncheckAll -> 
+            Seq.empty

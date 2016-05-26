@@ -2,6 +2,7 @@
 module DevFSharp.NUnitTests.TestHelpers
 
 open System
+open FSharp.Core
 open DevFSharp.Validations
 open NUnit.Framework
 
@@ -24,7 +25,7 @@ let testProcessCommandIsValid (processCommand: 'state option -> 'command -> 'eve
 let testProcessCommandIsInvalid (processCommand: 'state option -> 'command -> 'event list) (state: 'state option) (command: 'command) =
     let call = fun () -> processCommand state command |> ignore
     in
-    Assert.That (call, Throws.TypeOf<NotSupportedException>())
+    Assert.That (call, Throws.TypeOf<MatchFailureException>())
     
 
 let testReceiveEventIsValid (receiveEvent: 'state option -> 'event -> 'state option) (state: 'state option) (event: 'event) (expectedState: 'state option) =
@@ -35,5 +36,5 @@ let testReceiveEventIsValid (receiveEvent: 'state option -> 'event -> 'state opt
 let testReceiveEventIsInvalid (receiveEvent: 'state option -> 'event -> 'state option) (state: 'state option) (event: 'event) =
     let call = fun () -> receiveEvent state event |> ignore
     in
-    Assert.That (call, Throws.TypeOf<NotSupportedException>())
+    Assert.That (call, Throws.TypeOf<MatchFailureException>())
 
