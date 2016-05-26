@@ -34,9 +34,8 @@
       <HintPath>..\packages\Akka.1.0.8\lib\net45\Akka.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="FluentValidation, Version=6.2.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\FluentValidation.6.2.1.0\lib\Net45\FluentValidation.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="DevFSharp">
+      <HintPath>..\DevFSharp\bin\Debug\DevFSharp.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=8.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.8.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
@@ -73,12 +72,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AggregateActors\InstanceActor.cs" />
-    <Compile Include="AggregateClassesSupervisor.cs" />
-    <Compile Include="AggregateClassSupervisor.cs" />
-    <Compile Include="AggregateInstanceActor.cs" />
-    <Compile Include="AggregateInstanceSupervisor.cs" />
-    <Compile Include="AggregateValidatorActor.cs" />
-    <Compile Include="AggregateValidatorSupervisor.cs" />
+    <None Include="AggregateClassesSupervisor.cs" />
+    <None Include="AggregateClassSupervisor.cs" />
+    <None Include="AggregateInstanceActor.cs" />
+    <None Include="AggregateInstanceSupervisor.cs" />
+    <None Include="AggregateValidatorActor.cs" />
+    <None Include="AggregateValidatorSupervisor.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

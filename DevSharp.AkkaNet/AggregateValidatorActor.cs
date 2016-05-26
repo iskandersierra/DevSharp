@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using Akka;
 using Akka.Actor;
+using DevFSharp;
 using DevSharp.Domain;
-using FluentValidation.Results;
 
 namespace DevSharp.AkkaNet
 {
@@ -60,13 +60,13 @@ namespace DevSharp.AkkaNet
 
         public class ValidatedCommand
         {
-            public ValidatedCommand(ValidationResult result)
+            public ValidatedCommand(Validations.ValidationFailure result)
             {
                 if (result == null) throw new ArgumentNullException(nameof(result));
                 this.Result = result;
             }
 
-            public ValidationResult Result { get; }
+            public Validations.ValidationFailure Result { get; }
         }
 
         #endregion

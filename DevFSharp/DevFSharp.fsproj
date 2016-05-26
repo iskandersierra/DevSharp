@@ -44,10 +44,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
-    <Compile Include="Validations.fs" />
-    <None Include="Script.fsx" />
-    <Compile Include="Serialization.fs" />
     <Compile Include="Annotations.fs" />
+    <Compile Include="Validations.fs" />
+    <Compile Include="Serialization.fs" />
+    <None Include="Script.fsx" />
   </ItemGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>

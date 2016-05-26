@@ -1,11 +1,19 @@
 ﻿module DevFSharp.Validations
 
+open System
 open FSharp.Reflection
 
-type ValidationFailure = 
-    | Failure of string
-    | MemberFailure of string * string
-    | ExceptionFailure of string * System.Exception
+type ValidationMessage  = string
+type MemberName         = string
+
+type ValidationResult = 
+    | Valid
+    | Failure           of ValidationMessage
+    | MemberFailure     of ValidationMessage * MemberName
+    | ExceptionFailure  of ValidationMessage * Exception
+
+type ValidationError =
+    ValidationError     of ValidationResult list
 
 let failure message = Failure message
 
