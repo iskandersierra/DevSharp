@@ -26,7 +26,7 @@ let testProcessCommandIsInvalid (processCommand: 'state option -> 'command -> 'e
     let call = fun () -> processCommand state command |> ignore
     in
     Assert.That (call, Throws.TypeOf<MatchFailureException>())
-    
+
 
 let testReceiveEventIsValid (receiveEvent: 'state option -> 'event -> 'state option) (state: 'state option) (event: 'event) (expectedState: 'state option) =
     let state2 = receiveEvent state event
