@@ -4,26 +4,27 @@ open System
 open DevFSharp.Validations
 
 type TodoListTitle = string
-type TaskText = string
+type TaskId        = int
+type TaskText      = string
 
 type Event = 
     | Created      of TodoListTitle     // [ 'text' ]
     | TitleUpdated of TodoListTitle     // [ 'text' ]
-    | TaskAdded    of int * string      // [ 1, 'text' ]
-    | TaskUpdated  of int * string      // [ 1, 'text' ]
-    | TaskRemoved  of int               // [ 1 ]
-    | Checked      of int               // [ 1 ]
-    | Unchecked    of int               // [ 1 ]
+    | TaskAdded    of TaskId * TaskText      // [ 1, 'text' ]
+    | TaskUpdated  of TaskId * TaskText      // [ 1, 'text' ]
+    | TaskRemoved  of TaskId               // [ 1 ]
+    | Checked      of TaskId               // [ 1 ]
+    | Unchecked    of TaskId               // [ 1 ]
     
  // POST: http://example.com/api/Samples.TodoList/12345/Create [ 'Ejemplo' ]
 type Command =
     | Create      of TodoListTitle      // [ 'Ejemplo' ]
     | UpdateTitle of TodoListTitle      // [ 'Ejemplo2' ]
-    | AddTask     of string             // [ 'Things to do later' ] 
-    | UpdateTask  of int * string       // [ 1, 'More things to do later' ]
-    | RemoveTask  of int                // [ 1 ]
-    | Check       of int                // [ 1 ]
-    | Uncheck     of int                // [ 1 ]
+    | AddTask     of TaskText             // [ 'Things to do later' ] 
+    | UpdateTask  of TaskId * TaskText       // [ 1, 'More things to do later' ]
+    | RemoveTask  of TaskId                // [ 1 ]
+    | Check       of TaskId                // [ 1 ]
+    | Uncheck     of TaskId                // [ 1 ]
     | RemoveAll                         // []
     | RemoveAllChecked                  // []
     | CheckAll                          // []    
@@ -32,13 +33,13 @@ type Command =
 type State =                            // { title: 'Ejemplo', nextTaskId: 3, tasks: [ {id: 1, text: 'abc', isChecked: true}, {id: 2, text: 'def', isChecked: false} ] }
     { 
         title:      TodoListTitle; 
-        nextTaskId: int; 
+        nextTaskId: TaskId; 
         tasks:      TodoTask list;
     }    
 and  TodoTask =
     { 
-        id:        int; 
-        text:      string; 
+        id:        TaskId; 
+        text:      TaskText; 
         isChecked: bool;
     }
 
