@@ -18,8 +18,20 @@ and FailureType =
 
 type ValidationResult =
     {
-        ValidationError : ValidationItem list;
-        IsValid : bool;
+        items : ValidationItem list;
+        isValid : bool;
+    }
+
+let validationResult items =
+    let itemsList = items |> Seq.toList
+    let isValidItem it =
+        match it with 
+        | Failure (_, _) -> false 
+        | _ -> true
+    let isValid = itemsList |> List.forall isValidItem
+    {
+        items = itemsList;
+        isValid = isValid;
     }
 
 let failure message = Failure (message, UnknownFailure)
