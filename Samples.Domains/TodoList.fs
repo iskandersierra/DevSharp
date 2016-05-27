@@ -12,23 +12,23 @@ type TaskText               = string
 
 [<AggregateEvent>]
 type Event = 
-| WasCreated            of TodoListTitle
-| TitleWasUpdated       of TodoListTitle
-| TaskWasAdded          of TaskId * TaskText
-| TaskWasUpdated        of TaskId * TaskText
-| TaskWasRemoved        of TaskId
-| TaskWasChecked        of TaskId
-| TaskWasUnchecked      of TaskId
+| WasCreated                of TodoListTitle
+| TitleWasUpdated           of TodoListTitle
+| TaskWasAdded              of TaskId * TaskText
+| TaskWasUpdated            of TaskId * TaskText
+| TaskWasRemoved            of TaskId
+| TaskWasChecked            of TaskId
+| TaskWasUnchecked          of TaskId
     
 [<AggregateCommand>]
 type Command =
-| Create                of TodoListTitle
-| UpdateTitle           of TodoListTitle
-| AddTask               of TaskText
-| UpdateTask            of TaskId * TaskText
-| RemoveTask            of TaskId
-| CheckTask             of TaskId
-| UncheckTask           of TaskId
+| Create                    of TodoListTitle
+| UpdateTitle               of TodoListTitle
+| AddTask                   of TaskText
+| UpdateTask                of TaskId * TaskText
+| RemoveTask                of TaskId
+| CheckTask                 of TaskId
+| UncheckTask               of TaskId
 | RemoveAllTasks
 | RemoveAllCheckedTasks
 | CheckAllTasks

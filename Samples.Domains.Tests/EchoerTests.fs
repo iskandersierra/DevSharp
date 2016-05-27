@@ -1,28 +1,16 @@
 ﻿module ``Echoer tests``
 
-open System
 open NUnit.Framework
 open FsUnit
-open FSharp.Reflection
-open DevSharp.Validations
 open DevSharp.Testing
 open DevSharp.Testing.DomainTesting
-open Samples.Domains
+open Samples.Domains.Echoer
 
 
-let shortTextLength = 3
-let longTextLength  = 3
-let shortText       = String ('a', shortTextLength)
-let longText        = String ('a', longTextLength)
-
-let eventType   = typedefof<Echoer.Event>
-let commandType = typedefof<Echoer.Command>
+let eventType   = typedefof<Event>
+let commandType = typedefof<Command>
 let moduleType  = commandType.DeclaringType
 
-//let eventCases = FSharpType.GetUnionCases eventType |> Array.toList
-//let commandCases = FSharpType.GetUnionCases commandType |> Array.toList
-//let expectedEvents = [ ("WasEchoed", [ typedefof<string> ]) ]
-//let expectedCommands = [ ("Echo", [ typedefof<string> ]) ]
 
 // Definition
 
@@ -37,7 +25,8 @@ let ``Echoer Event should be defined as expected`` () =
     |> shouldBeAUnion
         { 
             unionName = "Event";
-            cases = [
+            cases = 
+            [
                 { caseName = "WasEchoed";  types = [ typedefof<string> ] }; 
             ]
         }
@@ -48,7 +37,8 @@ let ``Echoer Command should be defined as expected`` () =
     |> shouldBeAUnion
         { 
             unionName = "Command";
-            cases = [
+            cases = 
+            [
                 { caseName = "Echo";  types = [ typedefof<string> ] }; 
             ]
         }
@@ -56,8 +46,15 @@ let ``Echoer Command should be defined as expected`` () =
 
 // Runtime
 
+let message = "Random message"
+
 [<Test>]
-let ``initial state shoulf be null`` () =
-    Echoer.init 
-    |> should be Null
+let ``Echoer initial state should be null`` () =
+    init
+    |> should equal null
+
+[<Test>]
+let ``Echoer acting on Echo command with message over initial state gives WasEchoed with the same message`` () =
+    act (Echo message) 
+    |> should equal [ WasEchoed message ]
 

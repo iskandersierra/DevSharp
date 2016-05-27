@@ -2,12 +2,12 @@
 module Samples.Domains.Counter
 
 type Event = 
-    | WasIncremented
-    | WasDecremented
+| WasIncremented
+| WasDecremented
 
 type Command = 
-    | Increment
-    | Decrement
+| Increment
+| Decrement
 
 let init = 0
 
