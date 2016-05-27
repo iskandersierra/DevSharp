@@ -38,8 +38,18 @@ let ``Echoer Event should be defined as expected`` () =
         { 
             unionName = "Event";
             cases = [
-                //{ caseName = "Nothing"; types = [ ] };
-                { caseName = "WasEchoed";  types = [ typedefof<int>; typedefof<string> ] }; 
+                { caseName = "WasEchoed";  types = [ typedefof<string> ] }; 
+            ]
+        }
+
+[<Test>]
+let ``Echoer Command should be defined as expected`` () =
+    commandType 
+    |> shouldBeAUnion
+        { 
+            unionName = "Command";
+            cases = [
+                { caseName = "Echo";  types = [ typedefof<string> ] }; 
             ]
         }
 

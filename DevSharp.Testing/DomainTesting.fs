@@ -1,6 +1,7 @@
 ﻿module DevSharp.Testing.DomainTesting
 
 open System
+open System.Linq
 open NUnit.Framework
 open FsUnit
 open FSharp.Reflection
@@ -16,10 +17,6 @@ let aModule   = IsModuleConstraint()
 let aTuple    = IsTupleConstraint()
 
 let shouldBeAUnion (def: UnionDef) (atype: Type) =
-    let extractCaseName (c: UnionCaseInfo) = c.Name
-    let extractCaseDefName ({ caseName = name }) = name
-    let extractPropertyType (p: PropertyInfo) = p.PropertyType
-
     atype |> should be aUnion
     atype.Name |> should equal def.unionName
 
@@ -36,6 +33,16 @@ let shouldBeAUnion (def: UnionDef) (atype: Type) =
     | h :: _ -> failwithf "Union case %s should not be found" h.Name
     | _ -> ()
 
+    let matchingCases = actualCaseInfos |> List.except newCases |> List.map (fun info -> (info, def.cases |> List.find (fun c -> c.caseName = info.Name)))
+    let rec checkMatching (pairs: (UnionCaseInfo * UnionCaseDef) list) =
+        match pairs with
+        | [] -> ()
+        | ( info, case ) :: tail -> 
+            let fieldTypes = info.GetFields() |> Array.toList |> List.map (fun p -> p.PropertyType)
+            Enumerable.SequenceEqual (fieldTypes, case.types) |> should be True
+            checkMatching tail
+
+    checkMatching matchingCases
     
 
 // Returns true iff atype is a union type and its cases match with given cases
