@@ -1,6 +1,7 @@
 ﻿namespace DevSharp.Domain
 
 open DevSharp.Validations
+open DevSharp.Validations.ValidationUtils
 
 type NopAggregateClass() =
 
