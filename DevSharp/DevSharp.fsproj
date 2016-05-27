@@ -44,10 +44,17 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
-    <Compile Include="Annotations.fs" />
     <Compile Include="Validations.fs" />
     <Compile Include="Domain.fs" />
     <None Include="Script.fsx" />
+    <Compile Include="Annotations\AggregateInitAttribute.fs" />
+    <Compile Include="Annotations\AggregateModuleAttribute.fs" />
+    <Compile Include="Annotations\AggregateEventAttribute.fs" />
+    <Compile Include="Annotations\AggregateCommandAttribute.fs" />
+    <Compile Include="Annotations\AggregateStateAttribute.fs" />
+    <Compile Include="Annotations\AggregateActAttribute.fs" />
+    <Compile Include="Annotations\AggregateApplyAttribute.fs" />
+    <Compile Include="Annotations\AggregateValidateAttribute.fs" />
   </ItemGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">12</MinimumVisualStudioVersion>
