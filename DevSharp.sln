@@ -19,6 +19,8 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "DevSharp", "DevSharp\DevSha
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "DevSharp.Server", "DevSharp.Server\DevSharp.Server.fsproj", "{885966B8-AA91-4F01-95A0-CBFE10856AEA}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Samples.Domains", "Samples.Domains\Samples.Domains.fsproj", "{905E7B58-263A-4A93-9073-3805185CD49D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -57,6 +59,10 @@ Global
 		{885966B8-AA91-4F01-95A0-CBFE10856AEA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{885966B8-AA91-4F01-95A0-CBFE10856AEA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{885966B8-AA91-4F01-95A0-CBFE10856AEA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{905E7B58-263A-4A93-9073-3805185CD49D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{905E7B58-263A-4A93-9073-3805185CD49D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{905E7B58-263A-4A93-9073-3805185CD49D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{905E7B58-263A-4A93-9073-3805185CD49D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

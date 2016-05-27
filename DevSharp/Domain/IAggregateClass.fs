@@ -10,9 +10,9 @@ type StateType   = obj
 
 type IAggregateClass =
 
-    abstract member validate: CommandType -> ValidationResult
-
     abstract member init: StateType
+
+    abstract member validate: CommandType -> ValidationResult
 
     abstract member act: CommandType -> StateType -> EventType seq
 
