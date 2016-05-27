@@ -45,7 +45,6 @@
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Validations.fs" />
-    <Compile Include="Domain.fs" />
     <None Include="Script.fsx" />
     <Compile Include="Annotations\AggregateInitAttribute.fs" />
     <Compile Include="Annotations\AggregateModuleAttribute.fs" />
@@ -55,6 +54,8 @@
     <Compile Include="Annotations\AggregateActAttribute.fs" />
     <Compile Include="Annotations\AggregateApplyAttribute.fs" />
     <Compile Include="Annotations\AggregateValidateAttribute.fs" />
+    <Compile Include="Domain\IAggregateClass.fs" />
+    <Compile Include="Domain\NopAggregateClass.fs" />
   </ItemGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">12</MinimumVisualStudioVersion>
