@@ -70,11 +70,6 @@
       <Project>{a5849750-2d7c-4975-a056-46c6c0c999a1}</Project>
       <Private>True</Private>
     </ProjectReference>
-    <ProjectReference Include="..\DevSharp\DevSharp.csproj">
-      <Name>DevSharp</Name>
-      <Project>{c15f367c-b028-437e-b695-dea59223ccbf}</Project>
-      <Private>True</Private>
-    </ProjectReference>
   </ItemGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
