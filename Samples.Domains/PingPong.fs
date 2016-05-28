@@ -9,8 +9,6 @@ type Command =
     | Ping
     | Pong
 
-let init: obj = null
-
 let act command = 
     match command with
     | Ping -> [ WasPinged ]

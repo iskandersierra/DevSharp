@@ -48,11 +48,6 @@ let ``PingPong Command should be defined as expected`` () =
 // Runtime
 
 [<Test>]
-let ``PingPong initial state should be null`` () =
-    init
-    |> should equal null
-
-[<Test>]
 let ``PingPong acting on Ping command over initial state gives WasPinged`` () =
     act Ping 
     |> should equal [ WasPinged ]

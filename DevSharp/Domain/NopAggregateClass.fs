@@ -7,12 +7,15 @@ type NopAggregateClass() =
 
     interface IAggregateClass with
 
-        member this.validate command = validationResult []
-
         member this.init = null
+        member this.isStateless = true
+        
+        member this.requiresRequest = false
 
-        member this.act command state = Seq.empty
+        member this.validate command request = validationResult []
 
-        member this.apply event state = null
+        member this.act command state request = Seq.empty
+
+        member this.apply event state request = null
 
     

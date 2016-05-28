@@ -44,6 +44,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="Dict.fs" />
     <Compile Include="Annotations\AggregateInitAttribute.fs" />
     <Compile Include="Annotations\AggregateModuleAttribute.fs" />
     <Compile Include="Annotations\AggregateEventAttribute.fs" />
@@ -54,6 +55,7 @@
     <Compile Include="Annotations\AggregateValidateAttribute.fs" />
     <Compile Include="Validations\ValidationResult.fs" />
     <Compile Include="Validations\ValidationUtils.fs" />
+    <Compile Include="Messaging\Requests.fs" />
     <Compile Include="Domain\IAggregateClass.fs" />
     <Compile Include="Domain\NopAggregateClass.fs" />
     <None Include="Script.fsx" />

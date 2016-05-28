@@ -54,10 +54,10 @@ let ``Counter initial state should be zero`` () =
 
 [<Test>]
 let ``Counter acting on Increment command over initial state gives WasIncremented`` () =
-    act Increment init
+    act Increment
     |> should equal [ WasIncremented ]
 
 [<Test>]
 let ``Counter acting on Decrement command over initial state gives WasDecremented`` () =
-    act Decrement init
+    act Decrement
     |> should equal [ WasDecremented ]

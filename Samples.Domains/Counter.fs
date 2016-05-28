@@ -11,7 +11,7 @@ type Command =
 
 let init = 0
 
-let act command value = 
+let act command = 
     match command with
     | Increment -> [ WasIncremented ]
     | Decrement -> [ WasDecremented ]
