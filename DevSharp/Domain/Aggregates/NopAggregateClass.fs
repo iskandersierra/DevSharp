@@ -1,4 +1,4 @@
-﻿namespace DevSharp.Domain
+﻿namespace DevSharp.Domain.Aggregates
 
 open DevSharp.Validations
 open DevSharp.Validations.ValidationUtils

@@ -8,7 +8,7 @@ open DevSharp.Messaging
 open DevSharp.Annotations
 open DevSharp.Validations
 open DevSharp.Validations.ValidationUtils
-open DevSharp.Domain
+open DevSharp.Domain.Aggregates
 open DevSharp.Server
 
 type validateDelegate = Func<obj, Request, ValidationItem seq>

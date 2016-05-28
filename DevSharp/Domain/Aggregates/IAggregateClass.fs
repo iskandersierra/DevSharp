@@ -1,4 +1,4 @@
-﻿namespace DevSharp.Domain
+﻿namespace DevSharp.Domain.Aggregates
 
 open FSharp.Core
 open DevSharp.Messaging

@@ -2,7 +2,7 @@ module DevSharp.Server.Tests.ModuleAggregateClassPingPongTest
 
 open NUnit.Framework
 open FsUnit
-open DevSharp.Domain
+open DevSharp.Domain.Aggregates
 open DevSharp.Server.Domain
 open Samples.Domains.PingPong
 open DevSharp.Messaging

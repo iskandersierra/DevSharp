@@ -56,9 +56,10 @@
     <Compile Include="Validations\ValidationResult.fs" />
     <Compile Include="Validations\ValidationUtils.fs" />
     <Compile Include="Messaging\Requests.fs" />
-    <Compile Include="Domain\IAggregateClass.fs" />
-    <Compile Include="Domain\NopAggregateClass.fs" />
     <None Include="Script.fsx" />
+    <Compile Include="Domain\Aggregates\IAggregateClass.fs" />
+    <Compile Include="Domain\Aggregates\NopAggregateClass.fs" />
+    <Compile Include="Domain\Aggregates\AggregateBehavior.fs" />
   </ItemGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">12</MinimumVisualStudioVersion>

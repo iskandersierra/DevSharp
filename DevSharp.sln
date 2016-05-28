@@ -15,6 +15,8 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "DevSharp.Testing", "DevShar
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "DevSharp.Server.Tests", "DevSharp.Server.Tests\DevSharp.Server.Tests.fsproj", "{D0B4FB31-AD45-4086-AC71-9ABE43C5D846}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "DevSharp.AkkaActors", "DevSharp.AkkaActors\DevSharp.AkkaActors.fsproj", "{886B688E-135C-4338-8470-C4226ECC73F7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,6 +47,10 @@ Global
 		{D0B4FB31-AD45-4086-AC71-9ABE43C5D846}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D0B4FB31-AD45-4086-AC71-9ABE43C5D846}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D0B4FB31-AD45-4086-AC71-9ABE43C5D846}.Release|Any CPU.Build.0 = Release|Any CPU
+		{886B688E-135C-4338-8470-C4226ECC73F7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{886B688E-135C-4338-8470-C4226ECC73F7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{886B688E-135C-4338-8470-C4226ECC73F7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{886B688E-135C-4338-8470-C4226ECC73F7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

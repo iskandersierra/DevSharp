@@ -2,7 +2,7 @@ module DevSharp.Server.Tests.ModuleAggregateClassTodoListTest
 
 open NUnit.Framework
 open FsUnit
-open DevSharp.Domain
+open DevSharp.Domain.Aggregates
 open DevSharp.Server.Domain
 open Samples.Domains.TodoList
 open DevSharp.Messaging
