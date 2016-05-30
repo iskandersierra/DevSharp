@@ -1,4 +1,4 @@
-module DevSharp.Server.Tests.ModuleAggregateClassPingPongTest
+module DevSharp.Server.Domain.Tests.ModuleAggregateClassPingPongTest
 
 open NUnit.Framework
 open FsUnit

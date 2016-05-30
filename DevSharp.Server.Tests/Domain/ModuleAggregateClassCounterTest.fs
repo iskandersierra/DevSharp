@@ -1,4 +1,4 @@
-module DevSharp.Server.Tests.ModuleAggregateClassCounterTest
+module DevSharp.Server.Domain.Tests.ModuleAggregateClassCounterTest
 
 open NUnit.Framework
 open FsUnit

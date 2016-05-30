@@ -1,4 +1,4 @@
-module DevSharp.Server.Tests.ModuleAggregateClassTodoListTest
+module DevSharp.Server.Domain.Tests.ModuleAggregateClassTodoListTest
 
 open NUnit.Framework
 open FsUnit

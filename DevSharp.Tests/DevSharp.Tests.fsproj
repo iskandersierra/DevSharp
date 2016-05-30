@@ -6,14 +6,14 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>d0b4fb31-ad45-4086-ac71-9abe43c5d846</ProjectGuid>
+    <ProjectGuid>b94f7030-a921-4191-bc76-37c73f4c7f5c</ProjectGuid>
     <OutputType>Library</OutputType>
-    <RootNamespace>DevSharp.Server.Tests</RootNamespace>
-    <AssemblyName>DevSharp.Server.Tests</AssemblyName>
-    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <RootNamespace>DevSharp.Tests</RootNamespace>
+    <AssemblyName>DevSharp.Tests</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <TargetFSharpCoreVersion>4.4.0.0</TargetFSharpCoreVersion>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    <Name>DevSharp.Server.Tests</Name>
+    <Name>DevSharp.Tests</Name>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
   </PropertyGroup>
@@ -25,7 +25,7 @@
     <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
-    <DocumentationFile>bin\Debug\DevSharp.Server.Tests.XML</DocumentationFile>
+    <DocumentationFile>bin\Debug\DevSharp.Tests.XML</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -34,7 +34,7 @@
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
-    <DocumentationFile>bin\Release\DevSharp.Server.Tests.XML</DocumentationFile>
+    <DocumentationFile>bin\Release\DevSharp.Tests.XML</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
@@ -54,13 +54,10 @@
   <Import Project="$(FSharpTargetsPath)" />
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
-    <Content Include="packages.config" />
-    <Content Include="App.config" />
     <None Include="Script.fsx" />
-    <Compile Include="Domain\ModuleAggregateClassTodoListTest.fs" />
-    <Compile Include="Domain\ModuleAggregateClassEchoerTest.fs" />
-    <Compile Include="Domain\ModuleAggregateClassPingPongTest.fs" />
-    <Compile Include="Domain\ModuleAggregateClassCounterTest.fs" />
+    <Content Include="packages.config" />
+    <Compile Include="Domain\Aggregates\AggregateBehaviorTests.fs" />
+    <Content Include="App.config" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="FsCheck">
@@ -87,12 +84,6 @@
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
-    <Reference Include="Unquote">
-      <HintPath>..\packages\Unquote.3.1.1\lib\net45\Unquote.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\DevSharp.Server\DevSharp.Server.fsproj">
       <Name>DevSharp.Server</Name>
       <Project>{885966b8-aa91-4f01-95a0-cbfe10856aea}</Project>
@@ -113,6 +104,10 @@
       <Project>{905e7b58-263a-4a93-9073-3805185cd49d}</Project>
       <Private>True</Private>
     </ProjectReference>
+    <Reference Include="Unquote">
+      <HintPath>..\packages\Unquote.3.1.1\lib\net45\Unquote.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
   </ItemGroup>
   <Target Name="AfterBuild">
     <MSBuild.ExtensionPack.FileSystem.File TaskAction="Replace" RegexPattern="&lt;dependentAssembly&gt;([\s]+.)&lt;assemblyIdentity name=&quot;FSharp\.Core&quot; publicKeyToken=&quot;b03f5f7f11d50a3a&quot; culture=&quot;neutral&quot; \/&gt;([\s\S]+?)&lt;\/dependentAssembly&gt;" RegexOptionList="IgnoreCase|Singleline" Replacement="&lt;dependentAssembly&gt;&#xD;&#xA;        &lt;assemblyIdentity name=&quot;FSharp.Core&quot; publicKeyToken=&quot;b03f5f7f11d50a3a&quot; culture=&quot;neutral&quot; /&gt;&#xD;&#xA;        &lt;bindingRedirect oldVersion=&quot;0.0.0.0-$(TargetFSharpCoreVersion)&quot; newVersion=&quot;$(TargetFSharpCoreVersion)&quot;/&gt;&#xD;&#xA;      &lt;/dependentAssembly&gt;" Files="$(TargetPath).config" />

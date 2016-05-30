@@ -1,4 +1,4 @@
-module DevSharp.Server.Tests.ModuleAggregateClassEchoerTest
+module DevSharp.Server.Domain.Tests.ModuleAggregateClassEchoerTest
 
 open NUnit.Framework
 open FsUnit
