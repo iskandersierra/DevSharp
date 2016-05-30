@@ -2,6 +2,6 @@
 
 open System
 
-[<AttributeUsageAttribute(AttributeTargets.Method, Inherited = false, AllowMultiple = false)>]
+[<AttributeUsageAttribute(AttributeTargets.Property, Inherited = false, AllowMultiple = false)>]
 type AggregateInitAttribute() =
     inherit Attribute()

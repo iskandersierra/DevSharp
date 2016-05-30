@@ -12,10 +12,11 @@ type EventType        = obj
 type StateType        = obj
 
 type InputMessage =
-| OnCommand    of CommandType * Request * AggregateVersion
-| OnNext       of EventType * Request
-| OnError      of Exception
-| OnDone
+| LoadEvent         of EventType
+| LoadError         of Exception
+| LoadDone
+| ReceiveCommand    of CommandType * AggregateVersion
+| EventsPersisted   of EventType list
 
 type OutputMessage =
 | CommandDone
@@ -47,6 +48,9 @@ type BehaviorState =
 
 type ReceiveResult =
 | ReceiveResult of OutputMessage * BehaviorState
+
+let receiveResult output behavior = 
+    ReceiveResult (output, behavior)
 
 
 (*     Internal functions      *)
@@ -119,16 +123,17 @@ let init class' id =
 
 
 
-let receiveWhileLoading bahavior message =
+let receiveWhileLoading behavior message request =
     match message with
-    | OnNext (event, request) -> 
-        match applyEvent bahavior bahavior.state event request with
-        | EventWasApplied newState -> ReceiveResult (MessageAccepted, newState)
-        | ApplyEventHasFailed ex -> ReceiveResult (LoadingFailed ex, bahavior)
+    | LoadEvent event -> 
+        match applyEvent behavior behavior.state event request with
+        | EventWasApplied newState -> receiveResult MessageAccepted newState
+        | ApplyEventHasFailed ex -> receiveResult <| LoadingFailed ex <| { behavior with mode = Failed }
         
-    | OnError ex -> ReceiveResult (LoadingFailed ex, { bahavior with mode = Failed })
-    | OnDone -> ReceiveResult (MessageAccepted, { bahavior with mode = Waiting })
-    | OnCommand _ -> ReceiveResult (PostponeMessage, bahavior)
+    | LoadError ex -> receiveResult <| LoadingFailed ex <| { behavior with mode = Failed }
+    | LoadDone -> receiveResult MessageAccepted { behavior with mode = Waiting }
+    | ReceiveCommand _ -> receiveResult PostponeMessage behavior
+    | EventsPersisted _ -> receiveResult MessageRejected behavior
 
 //let receiveWhileWaiting behavior message =
 //    match message with
@@ -173,9 +178,10 @@ let receiveWhileLoading bahavior message =
 //
 //    | Failed ->
 //        ReceiveResult (MessageRejected, state)
-let receive behavior message = 
+
+let receive behavior message request = 
     match behavior.mode with
-    | LoadingEvents ->
-        receiveWhileLoading behavior message
+    | Loading ->
+        receiveWhileLoading behavior message request
     | _ ->
         failwith "Not implemented yet"
