@@ -49,6 +49,8 @@
     <Compile Include="Aggregates\Counter.fs" />
     <Compile Include="Aggregates\TodoList.fs" />
     <None Include="Script.fsx" />
+    <Compile Include="TableRecordProjections\TodoListListProjection.fs" />
+    <Compile Include="DocumentProjections\TodoListDocumentProjection.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DevSharp\DevSharp.fsproj">

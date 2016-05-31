@@ -35,13 +35,10 @@
     <WarningLevel>3</WarningLevel>
     <DocumentationFile>bin\Release\DevSharp.XML</DocumentationFile>
   </PropertyGroup>
-  <ItemGroup>
-    <Reference Include="FSharp.Core">
-      <Name>FSharp.Core</Name>
-      <AssemblyName>FSharp.Core.dll</AssemblyName>
-      <HintPath>$(MSBuildExtensionsPath32)\..\Reference Assemblies\Microsoft\FSharp\.NETCore\$(TargetFSharpCoreVersion)\FSharp.Core.dll</HintPath>
-    </Reference>
-  </ItemGroup>
+  <PropertyGroup>
+    <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">12</MinimumVisualStudioVersion>
+  </PropertyGroup>
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\FSharp\Microsoft.Portable.FSharp.Targets" />
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Dict.fs" />
@@ -53,18 +50,28 @@
     <Compile Include="Annotations\AggregateActAttribute.fs" />
     <Compile Include="Annotations\AggregateApplyAttribute.fs" />
     <Compile Include="Annotations\AggregateValidateAttribute.fs" />
+    <Compile Include="Annotations\TableRecordProjectionModuleAttribute.fs" />
+    <Compile Include="Annotations\DocumentProjectionModuleAttribute.fs" />
     <Compile Include="Validations\ValidationResult.fs" />
     <Compile Include="Validations\ValidationUtils.fs" />
     <Compile Include="Messaging\Requests.fs" />
-    <None Include="Script.fsx" />
     <Compile Include="Domain\Aggregates\IAggregateClass.fs" />
     <Compile Include="Domain\Aggregates\NopAggregateClass.fs" />
     <Compile Include="Domain\Aggregates\AggregateBehavior.fs" />
+    <None Include="Script.fsx" />
+    <Content Include="packages.config" />
   </ItemGroup>
-  <PropertyGroup>
-    <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">12</MinimumVisualStudioVersion>
-  </PropertyGroup>
-  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\FSharp\Microsoft.Portable.FSharp.Targets" />
+  <ItemGroup>
+    <Reference Include="FSharp.Core">
+      <Name>FSharp.Core</Name>
+      <AssemblyName>FSharp.Core.dll</AssemblyName>
+      <HintPath>$(MSBuildExtensionsPath32)\..\Reference Assemblies\Microsoft\FSharp\.NETCore\$(TargetFSharpCoreVersion)\FSharp.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\packages\Newtonsoft.Json.8.0.3\lib\portable-net40+sl5+wp80+win8+wpa81\Newtonsoft.Json.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+  </ItemGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
