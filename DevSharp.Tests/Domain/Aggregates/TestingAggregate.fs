@@ -19,7 +19,11 @@ type TestingCommand =
 | InvalidCommand 
 | NopCommand
 
-type TestingState = { incCount: int; decCount: int; }
+type TestingState = 
+    { 
+        incCount: int; 
+        decCount: int; 
+    }
 
 [<AggregateInit>]
 let testingInit = { incCount = 0; decCount = 0; }
@@ -31,7 +35,7 @@ let testingAct command =
     | Decrement -> [ Decremented ]
     | NopCommand -> [ ]
     | FailingCommand -> raise (InvalidOperationException "Failing command")
-    | InvalidCommand -> raise (NotSupportedException "Invalid command")
+    | InvalidCommand -> [ Incremented ]
 
 [<AggregateApply>]
 let testingApply event state = 

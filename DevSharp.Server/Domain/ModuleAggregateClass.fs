@@ -196,6 +196,7 @@ type ModuleAggregateClass (aggregateModule: Type) =
     member this.apply event state request =
         applyInvoker(event, state, request)
 
+    override this.ToString() = sprintf "Aggregate class %s" aggregateFullName
 
     interface IAggregateClass with
         member this.init =
