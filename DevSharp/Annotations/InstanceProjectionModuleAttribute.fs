@@ -3,6 +3,6 @@
 open System
 
 [<AttributeUsageAttribute(AttributeTargets.Class, Inherited = false, AllowMultiple = false)>]
-type TableRecordProjectionModuleAttribute() =
+type InstanceProjectionModuleAttribute() =
     inherit Attribute()
 

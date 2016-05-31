@@ -1,11 +1,11 @@
-﻿[<DevSharp.Annotations.DocumentProjectionModule>]
-module TodoListDocumentProjection
+﻿[<DevSharp.Annotations.InstanceProjectionModule>]
+module TodoListRootProjection
 
 open DevSharp.Messaging
 open Samples.Domains.TodoList
 
 
-type Document =
+type Instance =
     {
         id:         string;
         title:      TodoListTitle; 
@@ -21,18 +21,18 @@ and  TodoTask =
 let selectId (event: Event) (request: Request) : string option =
     request.instanceId
 
-let create (id: string) (event: Event) (request: Request) : Document option =
+let create (id: string) (event: Event) (request: Request) : Instance option =
     match event with 
     | WasCreated title -> Some { id = id; title = title; tasks = [] }
     | _ -> None // do not create the record
 
-let update (document: Document) (event: Event) (request: Request) : Document option =
+let update (instance: Instance) (event: Event) (request: Request) : Instance option =
     match event with 
-    | TitleWasUpdated title -> Some { document with title = title; }
+    | TitleWasUpdated title -> Some { instance with title = title; }
     | TaskWasAdded (id, text) -> 
         Some { 
-        document with 
-            tasks = document.tasks @ [ { id = id; text = text; isChecked = false } ] ; 
+        instance with 
+            tasks = instance.tasks @ [ { id = id; text = text; isChecked = false } ] ; 
         }
     | TaskWasUpdated (id, text) -> 
         let updatedTask task = 
@@ -40,14 +40,14 @@ let update (document: Document) (event: Event) (request: Request) : Document opt
             then { task with text = text } 
             else task
         Some { 
-        document with 
-            tasks = document.tasks |> List.map updatedTask 
+        instance with 
+            tasks = instance.tasks |> List.map updatedTask 
         }
     | TaskWasRemoved id -> 
         let differentTask task = task.id <> id
         Some { 
-        document with 
-            tasks = document.tasks |> List.filter differentTask
+        instance with 
+            tasks = instance.tasks |> List.filter differentTask
         }
     | TaskWasChecked id -> 
         let checkedTask task = 
@@ -55,8 +55,8 @@ let update (document: Document) (event: Event) (request: Request) : Document opt
             then { task with isChecked = true } 
             else task
         Some { 
-        document with 
-            tasks = document.tasks 
+        instance with 
+            tasks = instance.tasks 
                     |> List.map checkedTask 
         }
     | TaskWasUnchecked id -> 
@@ -65,10 +65,10 @@ let update (document: Document) (event: Event) (request: Request) : Document opt
             then { task with isChecked = false } 
             else task
         Some { 
-        document with 
-            tasks = document.tasks 
+        instance with 
+            tasks = instance.tasks 
                     |> List.map uncheckedTask 
         }
     // | WasDeleted -> None
-    | _ -> Some document
+    | _ -> Some instance
         

@@ -50,14 +50,14 @@
     <Compile Include="Annotations\AggregateActAttribute.fs" />
     <Compile Include="Annotations\AggregateApplyAttribute.fs" />
     <Compile Include="Annotations\AggregateValidateAttribute.fs" />
-    <Compile Include="Annotations\TableRecordProjectionModuleAttribute.fs" />
-    <Compile Include="Annotations\DocumentProjectionModuleAttribute.fs" />
+    <Compile Include="Annotations\InstanceProjectionModuleAttribute.fs" />
     <Compile Include="Validations\ValidationResult.fs" />
     <Compile Include="Validations\ValidationUtils.fs" />
     <Compile Include="Messaging\Requests.fs" />
     <Compile Include="Domain\Aggregates\IAggregateClass.fs" />
     <Compile Include="Domain\Aggregates\NopAggregateClass.fs" />
     <Compile Include="Domain\Aggregates\AggregateBehavior.fs" />
+    <Compile Include="Domain\InstanceProjections\IInstanceProjection.fs" />
     <None Include="Script.fsx" />
     <Content Include="packages.config" />
   </ItemGroup>

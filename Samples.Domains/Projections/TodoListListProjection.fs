@@ -1,11 +1,11 @@
-﻿[<DevSharp.Annotations.TableRecordProjectionModule>]
+﻿[<DevSharp.Annotations.InstanceProjectionModule>]
 module Samples.Domains.TodoListListProjection
 
 open DevSharp.Messaging
 open Samples.Domains.TodoList
 
 
-type Record =
+type Instance =
     {
         id: string;
         title: TodoListTitle;
@@ -14,14 +14,14 @@ type Record =
 let selectId (event: Event) (request: Request) : string option =
     request.instanceId
 
-let create (id: string) (event: Event) (request: Request) : Record option =
+let create (id: string) (event: Event) (request: Request) : Instance option =
     match event with 
     | WasCreated title -> Some { id = id; title = title; }
-    | _ -> None // do not create the record
+    | _ -> None // do not create the instance
 
-let update (record: Record) (event: Event) (request: Request) : Record option =
+let update (instance: Instance) (event: Event) (request: Request) : Instance option =
     match event with 
-    | TitleWasUpdated title -> Some { record with title = title; }
+    | TitleWasUpdated title -> Some { instance with title = title; }
     // | WasDeleted -> None
-    | _ -> Some record
+    | _ -> Some instance
         

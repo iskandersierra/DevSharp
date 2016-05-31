@@ -48,9 +48,9 @@
     <Compile Include="Aggregates\PingPong.fs" />
     <Compile Include="Aggregates\Counter.fs" />
     <Compile Include="Aggregates\TodoList.fs" />
+    <Compile Include="Projections\TodoListListProjection.fs" />
+    <Compile Include="Projections\TodoListRootProjection.fs" />
     <None Include="Script.fsx" />
-    <Compile Include="TableRecordProjections\TodoListListProjection.fs" />
-    <Compile Include="DocumentProjections\TodoListDocumentProjection.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DevSharp\DevSharp.fsproj">
