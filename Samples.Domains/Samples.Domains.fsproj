@@ -44,10 +44,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
-    <Compile Include="Echoer.fs" />
-    <Compile Include="PingPong.fs" />
-    <Compile Include="Counter.fs" />
-    <Compile Include="TodoList.fs" />
+    <Compile Include="Aggregates\Echoer.fs" />
+    <Compile Include="Aggregates\PingPong.fs" />
+    <Compile Include="Aggregates\Counter.fs" />
+    <Compile Include="Aggregates\TodoList.fs" />
     <None Include="Script.fsx" />
   </ItemGroup>
   <ItemGroup>

@@ -85,13 +85,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="NUnitRunner.fs" />
+    <Compile Include="Aggregates\EchoerTests.fs" />
+    <Compile Include="Aggregates\PingPongTester.fs" />
+    <Compile Include="Aggregates\CounterTester.fs" />
+    <Compile Include="Aggregates\TodoListTester.fs" />
     <None Include="Script.fsx" />
     <None Include="packages.config" />
     <None Include="App.config" />
-    <Compile Include="EchoerTests.fs" />
-    <Compile Include="PingPongTester.fs" />
-    <Compile Include="CounterTester.fs" />
-    <Compile Include="TodoListTester.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DevSharp.Testing\DevSharp.Testing.fsproj">
