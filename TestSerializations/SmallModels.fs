@@ -1,5 +1,7 @@
 ﻿module SmallModels
 
+open System
+
 type MessageRec =
     {
         message: string;
@@ -19,6 +21,8 @@ type MessageTup =
 
 let messageTup msg ver : MessageTup = (msg, ver)
 
+let message id = messageTup (sprintf "Message #%A" id) id
+
 
 
 type ComplexRec =
@@ -35,6 +39,8 @@ type ComplexSum =
 
 let complexSum x y z = ComplexSum (x, y, z)
 
+let complex id = complexSum (decimal id) (float id) (uint64 id)
+
 type PostRec =
     {
         ID: System.Guid;
@@ -46,6 +52,7 @@ type PostRec =
 let postRec id title active created = 
     { ID = id; title = title; active = active; created = created; }
     
+let post id = postRec (Guid.NewGuid()) (sprintf "Post #%A" id) (id % 5 = 0) (DateTime.Today.AddMinutes (float id))
 
 
 

@@ -26,6 +26,7 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DocumentationFile>bin\Debug\TestSerializations.XML</DocumentationFile>
     <Prefer32Bit>true</Prefer32Bit>
+    <StartArguments>JsonNet Small Both 1000</StartArguments>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -62,6 +63,7 @@
     <Compile Include="SmallModels.fs" />
     <Compile Include="StartUp.fs" />
     <Compile Include="Program.fs" />
+    <Compile Include="MediumModels.fs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Jil">
