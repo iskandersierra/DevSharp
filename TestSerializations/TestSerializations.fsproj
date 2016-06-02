@@ -61,9 +61,9 @@
     <None Include="App.config" />
     <Content Include="packages.config" />
     <Compile Include="SmallModels.fs" />
+    <Compile Include="MediumModels.fs" />
     <Compile Include="StartUp.fs" />
     <Compile Include="Program.fs" />
-    <Compile Include="MediumModels.fs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Jil">
