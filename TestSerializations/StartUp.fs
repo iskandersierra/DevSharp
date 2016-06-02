@@ -18,16 +18,19 @@ type BenchSize =
 type BenchType  =
 | Serialization = 0
 | Both          = 1
-| None          = 2
-| Check         = 3
+// | None          = 2
+// | Check         = 3
 
 type InputArgs = 
     {
-        target: BenchTarget;
-        size:   BenchSize;
-        kind:   BenchType;
-        repeat: int;
+        target: BenchTarget option;
+        size:   BenchSize option;
+        kind:   BenchType option;
+        repeat: int option;
     }
+
+let printEnumNames<'a> sep =
+    System.String.Join (sep, typedefof<'a> |> System.Enum.GetNames )
 
 let parseEnum str =
     match Enum.TryParse<'e> str with
@@ -39,17 +42,29 @@ let parseInt32 str =
     | true, v -> Some v
     | false, _ -> None
 
-let parseArgs (argv: string[]) : InputArgs option =
-    if argv = null || argv.Length <> 4 
+let parseFirst parser argv =
+    let candidates = argv 
+                   |> Array.toSeq 
+                   |> Seq.map parser 
+                   |> Seq.collect (fun v -> match v with | Some a -> [a] | _ -> [])
+                   |> Seq.toList
+    match candidates with
+    | a :: _ -> Some a
+    | [] -> None
+
+
+let parseArgs (argv: string[]) =
+    if argv = null
     then None
-    else
-        let target: BenchTarget option = parseEnum argv.[0]
-        let size: BenchSize option = parseEnum argv.[1]
-        let kind: BenchType option = parseEnum argv.[2]
-        let repeat = parseInt32 argv.[3]
-        match (target, size, kind, repeat) with
-        | Some t, Some s, Some k, Some r -> Some { target = t; size = s; kind = k; repeat = r; }
-        | _ -> None
+    else 
+        if argv.Length <= 4 then
+            let target: BenchTarget option = parseFirst parseEnum argv
+            let size: BenchSize option = parseFirst parseEnum argv
+            let kind: BenchType option = parseFirst parseEnum argv
+            let repeat = parseFirst parseInt32 argv
+            Some { target = target; size = size; kind = kind; repeat = repeat; }
+        else
+            None
 
 type serializeFunc = obj -> MemoryStream -> unit
 type deserializeFunc = (MemoryStream -> Type -> obj)
@@ -60,10 +75,13 @@ type DatasetInfo =
 
 type BenchContext =
     {
-        args: InputArgs
-        initialGC: int list
-        profiler: MiniProfiler
-        serializer: serializeFunc
+        target:       BenchTarget;
+        size:         BenchSize;
+        kind:         BenchType;
+        repeat:       int;
+        initialGC:    int list
+        profiler:     MiniProfiler
+        serializer:   serializeFunc
         deserializer: deserializeFunc
         datasetInfos: DatasetInfo list
     }
@@ -103,16 +121,19 @@ let selectDataSetInfos size =
         let ds2 = DatasetInfo(typedefof<MediumModels.Post>, toObj MediumModels.post)
         [ds1; ds2]
 
-let initializeBench args =
+let initializeBench target size kind repeat =
     let gc = [0..2] |> List.map GC.CollectionCount
 
     MiniProfiler.Settings.ProfilerProvider <- SingletonProfilerProvider() :> IProfilerProvider
 
-    let serialize, deserialize = selectFunctions args.target
-    let datasets = selectDataSetInfos args.size
+    let serialize, deserialize = selectFunctions target
+    let datasets = selectDataSetInfos size
 
     {
-        args = args
+        target = target
+        size = size
+        kind = kind
+        repeat = repeat
         initialGC = gc
         profiler = MiniProfiler.Start()
         serializer = serialize
@@ -121,14 +142,47 @@ let initializeBench args =
     }
 
 let createDatasets context =
+    let createDataset info =
+        match info with
+        | DatasetInfo (type', factory) -> 
+            seq { 1..context.repeat }
+            |> Seq.map factory
+            |> Seq.toArray
+
     context.datasetInfos
+    |> List.map createDataset
 
 
-let startBench args =
-    let context = initializeBench args
+let startBench (args: InputArgs) =
+    let defaultRepeat = 100000
+    match args with
+    | { target = Some t; size = Some s } ->
+        let kind = match args.kind with | None -> BenchType.Both | Some k -> k
+        let repeat = match args.repeat with | None -> defaultRepeat | Some r -> r
+        printfn "Running benchmark with:"
+        printfn "Target: %A" t
+        printfn "Size:   %A" s
+        printfn "Kind:   %A" kind
+        printfn "Repeat: %d" repeat
 
-    let datasets = createDatasets context
+        let context = initializeBench t s kind repeat
 
-    let gc2 = [0..2] |> List.map (fun i -> GC.CollectionCount(i) - (context.initialGC.Item i))
-    printfn "GC collection counts: %A" gc2
+        let datasets = 
+            use step = context.profiler.Step "create"
+            in createDatasets context
+
+        MiniProfiler.Stop()
+
+        let gc2 = [0..2] |> List.map (fun i -> GC.CollectionCount(i) - (context.initialGC.Item i))
+        printfn "GC collection counts: %A" gc2
+
+        printfn "%s" (MiniProfiler.Current.RenderPlainText())
+
+    | _ ->
+        printfn "Running benchmark with:"
+        printfn "Target: %A" (match args.target with | None -> (printEnumNames<BenchTarget> " and ") :> obj | Some t -> t :> obj)
+        printfn "Size:   %A" (match args.size with | None -> (printEnumNames<BenchSize> " and ") :> obj | Some t -> t :> obj)
+        printfn "Kind:   %A" BenchType.Both
+        printfn "Repeat: %d" (match args.repeat with | None -> defaultRepeat | Some t -> t)
+        
 
