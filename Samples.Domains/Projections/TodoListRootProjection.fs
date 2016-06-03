@@ -1,5 +1,5 @@
 ﻿[<DevSharp.Annotations.InstanceProjectionModule>]
-module TodoListRootProjection
+module Samples.Domains.TodoListRootProjection
 
 open DevSharp.Messaging
 open Samples.Domains.TodoList

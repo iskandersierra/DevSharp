@@ -1,4 +1,5 @@
 [<DevSharp.Annotations.AggregateModule>]
+[<DevSharp.Annotations.DisplayName("Ping-Pong")>]
 module Samples.Domains.PingPong
 
 type Event = 

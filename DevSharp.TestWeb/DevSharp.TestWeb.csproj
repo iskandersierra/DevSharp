@@ -48,6 +48,10 @@
       <HintPath>..\packages\Antlr.3.5.0.2\lib\Antlr3.Runtime.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="FSharp.Core, Version=4.4.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\FSharp.Core.4.0.0.1\lib\net40\FSharp.Core.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="Microsoft.CodeDom.Providers.DotNetCompilerPlatform, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.1.0.1\lib\net45\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.dll</HintPath>
       <Private>True</Private>
@@ -63,7 +67,6 @@
     <Reference Include="System.Web.DynamicData" />
     <Reference Include="System.Web.Entity" />
     <Reference Include="System.Web.ApplicationServices" />
-    <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Xml.Linq" />
@@ -135,6 +138,7 @@
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
+    <Compile Include="Models\TestModels.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -185,10 +189,11 @@
     <Content Include="Views\Home\About.cshtml" />
     <Content Include="Views\Home\Contact.cshtml" />
     <Content Include="Views\Home\Index.cshtml" />
+    <Content Include="Views\Home\Test.cshtml" />
+    <Content Include="Views\Home\AllTests.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
-    <Folder Include="Models\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="packages.config">
@@ -196,6 +201,24 @@
     </Content>
     <None Include="Project_Readme.html" />
     <Content Include="Scripts\jquery-2.2.3.min.map" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\DevSharp.Server\DevSharp.Server.fsproj">
+      <Project>{885966b8-aa91-4f01-95a0-cbfe10856aea}</Project>
+      <Name>DevSharp.Server</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\DevSharp\DevSharp.fsproj">
+      <Project>{fb58d3bd-b83b-4011-95c3-d95328ea8220}</Project>
+      <Name>DevSharp</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Samples.Domains.Tests\Samples.Domains.Tests.fsproj">
+      <Project>{9c2cc7c0-146f-45e3-9066-4d989f091d23}</Project>
+      <Name>Samples.Domains.Tests</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Samples.Domains\Samples.Domains.fsproj">
+      <Project>{905e7b58-263a-4a93-9073-3805185cd49d}</Project>
+      <Name>Samples.Domains</Name>
+    </ProjectReference>
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
