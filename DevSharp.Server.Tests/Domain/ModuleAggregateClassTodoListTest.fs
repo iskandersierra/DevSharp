@@ -8,11 +8,13 @@ open Samples.Domains.TodoList
 open DevSharp.Messaging
 
 
+let initTitle = TodoListTitle "TodoList initial title"
+let title = TodoListTitle "TodoList new title"
+
 let aggregateModuleType = typedefof<Command>.DeclaringType
 let mutable aggregateClass = NopAggregateClass() :> IAggregateClass
 let request = Request(new Map<string, obj>(seq []))
-let message = "Helloooo!"
-let createdState() = apply (WasCreated "Some title") init
+let createdState() = apply (WasCreated title) init
 
 [<SetUp>]
 let testSetup () =
@@ -25,35 +27,35 @@ let ``loading a ModuleAggregateClass with TodoList aggregate module definition d
 
 [<Test>] 
 let ``validating a correct Create command should give a valid result`` () =
-    (aggregateClass.validate (Create message) request).isValid
+    (aggregateClass.validate (Create initTitle) request).isValid
     |> should be True
 
 [<Test>] 
 let ``validating an incorrect Create command should give a valid result`` () =
-    (aggregateClass.validate (Create null) request).isValid
+    (aggregateClass.validate (Create <| TodoListTitle null) request).isValid
     |> should be False
 
 [<Test>] 
 let ``acting with a Create command over initial state should return a WasCreated event`` () =
-    aggregateClass.act (Create message) init request
-    |> should equal [ WasCreated message ]
+    aggregateClass.act (Create initTitle) init request
+    |> should equal [ WasCreated initTitle ]
 
 [<Test>] 
 let ``acting with a Create command over some state should fail`` () =
-    (fun () -> aggregateClass.act (Create message) (createdState()) request |> ignore)
+    (fun () -> aggregateClass.act (Create initTitle) (createdState()) request |> ignore)
     |> should throw typeof<MatchFailureException>
 
 [<Test>] 
 let ``acting with a UpdateTitle command over initial state should fail`` () =
-    (fun () -> aggregateClass.act (UpdateTitle message) init request |> ignore)
+    (fun () -> aggregateClass.act (UpdateTitle initTitle) init request |> ignore)
     |> should throw typeof<MatchFailureException>
 
 [<Test>] 
 let ``acting with a Create command over some state should return a WasCreated event`` () =
-    aggregateClass.act (UpdateTitle message) (createdState()) request
-    |> should equal [ TitleWasUpdated message ]
+    aggregateClass.act (UpdateTitle initTitle) (createdState()) request
+    |> should equal [ TitleWasUpdated initTitle ]
 
 [<Test>] 
 let ``applying a WasCreated event over initial state should return the some state`` () =
-    aggregateClass.apply (WasCreated message) init request
-    |> should equal (apply (TitleWasUpdated message) (createdState()))
+    aggregateClass.apply (WasCreated initTitle) init request
+    |> should equal (apply (TitleWasUpdated initTitle) (createdState()))

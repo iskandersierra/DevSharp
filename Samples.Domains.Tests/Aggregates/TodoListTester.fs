@@ -32,13 +32,13 @@ let ``TodoList Event should be defined as expected`` () =
             unionName = "Event";
             cases = 
             [
-                { caseName = "WasCreated";  types = [ typedefof<string>; ] }; 
-                { caseName = "TitleWasUpdated";  types = [ typedefof<string>; ] }; 
-                { caseName = "TaskWasAdded";  types = [ typedefof<int>; typedefof<string>; ] }; 
-                { caseName = "TaskWasUpdated";  types = [ typedefof<int>; typedefof<string>; ] }; 
-                { caseName = "TaskWasRemoved";  types = [ typedefof<int>; ] }; 
-                { caseName = "TaskWasChecked";  types = [ typedefof<int>; ] }; 
-                { caseName = "TaskWasUnchecked";  types = [ typedefof<int>; ] }; 
+                { caseName = "WasCreated";  types = [ typedefof<TodoListTitle>; ] }; 
+                { caseName = "TitleWasUpdated";  types = [ typedefof<TodoListTitle>; ] }; 
+                { caseName = "TaskWasAdded";  types = [ typedefof<TaskId>; typedefof<TaskText>; ] }; 
+                { caseName = "TaskWasUpdated";  types = [ typedefof<TaskId>; typedefof<TaskText>; ] }; 
+                { caseName = "TaskWasRemoved";  types = [ typedefof<TaskId>; ] }; 
+                { caseName = "TaskWasChecked";  types = [ typedefof<TaskId>; ] }; 
+                { caseName = "TaskWasUnchecked";  types = [ typedefof<TaskId>; ] }; 
             ]
         }
 
@@ -50,13 +50,13 @@ let ``TodoList Command should be defined as expected`` () =
             unionName = "Command";
             cases = 
             [
-                { caseName = "Create";  types = [ typedefof<string>; ] }; 
-                { caseName = "UpdateTitle";  types = [ typedefof<string>; ] }; 
-                { caseName = "AddTask";  types = [ typedefof<string>; ] }; 
-                { caseName = "UpdateTask";  types = [ typedefof<int>; typedefof<string>; ] }; 
-                { caseName = "RemoveTask";  types = [ typedefof<int>; ] }; 
-                { caseName = "CheckTask";  types = [ typedefof<int>; ] }; 
-                { caseName = "UncheckTask";  types = [ typedefof<int>; ] }; 
+                { caseName = "Create";  types = [ typedefof<TodoListTitle>; ] }; 
+                { caseName = "UpdateTitle";  types = [ typedefof<TodoListTitle>; ] }; 
+                { caseName = "AddTask";  types = [ typedefof<TaskText>; ] }; 
+                { caseName = "UpdateTask";  types = [ typedefof<TaskId>; typedefof<TaskText>; ] }; 
+                { caseName = "RemoveTask";  types = [ typedefof<TaskId>; ] }; 
+                { caseName = "CheckTask";  types = [ typedefof<TaskId>; ] }; 
+                { caseName = "UncheckTask";  types = [ typedefof<TaskId>; ] }; 
                 { caseName = "RemoveAllTasks";  types = [ ] }; 
                 { caseName = "RemoveAllCheckedTasks";  types = [ ] }; 
                 { caseName = "CheckAllTasks";  types = [ ] }; 
@@ -67,16 +67,18 @@ let ``TodoList Command should be defined as expected`` () =
 
 // Runtime
 
-let initTitle = "TodoList initial title"
-let title = "TodoList new title"
-let initText = "Task new text"
+let initTitle = TodoListTitle "TodoList initial title"
+let title = TodoListTitle "TodoList new title"
+let initText = TaskText "Task new text"
+let newText = TaskText "Task other text"
+let taskText str = TaskText str
 
 let createdState()   = applyEvents2 init apply [ WasCreated initTitle ]
-let oneTaskState()   = applyEvents2 (createdState()) apply [ TaskWasAdded (1, "task #1") ]
-let twoTaskState()   = applyEvents2 (oneTaskState()) apply [ TaskWasAdded (2, "task #2") ]
-let threeTaskState() = applyEvents2 (twoTaskState()) apply [ TaskWasAdded (3, "task #3") ]
-let threeTaskTwoCheckedState() = applyEvents2 (threeTaskState()) apply [ TaskWasChecked 1; TaskWasChecked 3; ]
-let threeTaskAllCheckedState() = applyEvents2 (threeTaskTwoCheckedState()) apply [ TaskWasChecked 2; ]
+let oneTaskState()   = applyEvents2 (createdState()) apply [ TaskWasAdded (TaskId 1, TaskText "task #1") ]
+let twoTaskState()   = applyEvents2 (oneTaskState()) apply [ TaskWasAdded (TaskId 2, TaskText "task #2") ]
+let threeTaskState() = applyEvents2 (twoTaskState()) apply [ TaskWasAdded (TaskId 3, TaskText "task #3") ]
+let threeTaskTwoCheckedState() = applyEvents2 (threeTaskState()) apply [ TaskWasChecked <| TaskId 1; TaskWasChecked <| TaskId 3; ]
+let threeTaskAllCheckedState() = applyEvents2 (threeTaskTwoCheckedState()) apply [ TaskWasChecked <| TaskId 2; ]
 
 
 [<Test>]
@@ -111,83 +113,83 @@ let ``TodoList acting with UpdateTitle command with title over some state should
 
 [<Test>]
 let ``TodoList acting with AddTask command over initial state should fail`` () =
-    (fun () -> act (AddTask initTitle) init |> ignore)
+    (fun () -> act (AddTask initText) init |> ignore)
     |> should throw typeof<MatchFailureException>
 
 [<Test>]
 let ``TodoList acting with AddTask command with initText over some state should give TaskWasAdded with the same initText`` () =
     act (AddTask initText) (createdState())
-    |> should equal [ TaskWasAdded (1, initText) ]
+    |> should equal [ TaskWasAdded (TaskId 1, initText) ]
 
 [<Test>]
 let ``TodoList acting with UpdateTask command over initial state should fail`` () =
-    (fun () -> act (UpdateTask (1, initTitle)) init |> ignore)
+    (fun () -> act (UpdateTask (TaskId 1, initText)) init |> ignore)
     |> should throw typeof<MatchFailureException>
 
 [<Test>]
 let ``TodoList acting with UpdateTask command with initTitle over some state should give no events`` () =
-    act (UpdateTask (1, initTitle)) (createdState())
+    act (UpdateTask (TaskId 1, initText)) (createdState())
     |> should equal [ ]
 
 [<Test>]
 let ``TodoList acting with UpdateTask command with title over some state should give TaskWasUpdated with the same title`` () =
-    act (UpdateTask (1, title)) (twoTaskState())
-    |> should equal [ TaskWasUpdated (1, title) ]
+    act (UpdateTask (TaskId 1, initText)) (twoTaskState())
+    |> should equal [ TaskWasUpdated (TaskId 1, initText) ]
 
 [<Test>]
 let ``TodoList acting with RemoveTask command over initial state should fail`` () =
-    (fun () -> act (RemoveTask 1) init |> ignore)
+    (fun () -> act (RemoveTask <| TaskId 1) init |> ignore)
     |> should throw typeof<MatchFailureException>
 
 [<Test>]
 let ``TodoList acting with RemoveTask command with initTitle over some state should give no events`` () =
-    act (RemoveTask 1) (createdState())
+    act (RemoveTask <| TaskId 1) (createdState())
     |> should equal [ ]
 
 [<Test>]
 let ``TodoList acting with RemoveTask command with title over some state should give TaskWasRemoved with the same title`` () =
-    act (RemoveTask 1) (twoTaskState())
-    |> should equal [ TaskWasRemoved 1 ]
+    act (RemoveTask <| TaskId 1) (twoTaskState())
+    |> should equal [ TaskWasRemoved <| TaskId 1 ]
 
 [<Test>]
 let ``TodoList acting with CheckTask command over initial state should fail`` () =
-    (fun () -> act (CheckTask 1) init |> ignore)
+    (fun () -> act (CheckTask <| TaskId 1) init |> ignore)
     |> should throw typeof<MatchFailureException>
 
 [<Test>]
 let ``TodoList acting with CheckTask command with id over empty state should give no events`` () =
-    act (CheckTask 1) (createdState())
+    act (CheckTask <| TaskId 1) (createdState())
     |> should equal [ ]
 
 [<Test>]
 let ``TodoList acting with CheckTask command with id over checked task should give no events`` () =
-    act (CheckTask 1) (threeTaskTwoCheckedState())
+    act (CheckTask <| TaskId 1) (threeTaskTwoCheckedState())
     |> should equal [ ]
 
 [<Test>]
 let ``TodoList acting with CheckTask command with id over some state should give TaskWasChecked with the same id`` () =
-    act (CheckTask 1) (threeTaskState())
-    |> should equal [ TaskWasChecked 1 ]
+    act (CheckTask <| TaskId 1) (threeTaskState())
+    |> should equal [ TaskWasChecked <| TaskId 1 ]
 
 [<Test>]
 let ``TodoList acting with UncheckTask command over initial state should fail`` () =
-    (fun () -> act (UncheckTask 1) init |> ignore)
+    (fun () -> act (UncheckTask <| TaskId 1) init |> ignore)
     |> should throw typeof<MatchFailureException>
 
 [<Test>]
 let ``TodoList acting with UncheckTask command with id over empty state should give no events`` () =
-    act (UncheckTask 1) (createdState())
+    act (UncheckTask <| TaskId 1) (createdState())
     |> should equal [ ]
 
 [<Test>]
 let ``TodoList acting with UncheckTask command with id over unchecked task should give no events`` () =
-    act (UncheckTask 1) (threeTaskState())
+    act (UncheckTask <| TaskId 1) (threeTaskState())
     |> should equal [ ]
 
 [<Test>]
 let ``TodoList acting with UncheckTask command with id over checked task should give TaskWasUnchecked with the same id`` () =
-    act (UncheckTask 1) (threeTaskTwoCheckedState())
-    |> should equal [ TaskWasUnchecked 1 ]
+    act (UncheckTask <| TaskId 1) (threeTaskTwoCheckedState())
+    |> should equal [ TaskWasUnchecked <| TaskId 1 ]
 
 [<Test>]
 let ``TodoList acting with RemoveAllTasks command over initial state should fail`` () =
@@ -202,7 +204,7 @@ let ``TodoList acting with RemoveAllTasks command over empty state should give n
 [<Test>]
 let ``TodoList acting with RemoveAllTasks command over some state should give various TaskWasRemoved events`` () =
     act RemoveAllTasks (threeTaskTwoCheckedState())
-    |> should equal [ TaskWasRemoved 1; TaskWasRemoved 2; TaskWasRemoved 3; ]
+    |> should equal [ TaskWasRemoved <| TaskId 1; TaskWasRemoved <| TaskId 2; TaskWasRemoved <| TaskId 3; ]
 
 [<Test>]
 let ``TodoList acting with RemoveAllCheckedTasks command over initial state should fail`` () =
@@ -222,7 +224,7 @@ let ``TodoList acting with RemoveAllCheckedTasks command over state with no chec
 [<Test>]
 let ``TodoList acting with RemoveAllCheckedTasks command over some state should give various TaskWasRemoved events`` () =
     act RemoveAllCheckedTasks (threeTaskTwoCheckedState())
-    |> should equal [ TaskWasRemoved 1; TaskWasRemoved 3; ]
+    |> should equal [ TaskWasRemoved <| TaskId 1; TaskWasRemoved <| TaskId 3; ]
 
 [<Test>]
 let ``TodoList acting with CheckAllTasks command over initial state should fail`` () =
@@ -242,7 +244,7 @@ let ``TodoList acting with CheckAllTasks command over state with no unchecked ta
 [<Test>]
 let ``TodoList acting with CheckAllTasks command over some state should give various TaskWasChecked events`` () =
     act CheckAllTasks (threeTaskTwoCheckedState())
-    |> should equal [ TaskWasChecked 2; ]
+    |> should equal [ TaskWasChecked <| TaskId 2; ]
 
 [<Test>]
 let ``TodoList acting with UncheckAllTasks command over initial state should fail`` () =
@@ -262,4 +264,4 @@ let ``TodoList acting with UncheckAllTasks command over state with no unchecked 
 [<Test>]
 let ``TodoList acting with UncheckAllTasks command over some state should give various TaskWasUnchecked events`` () =
     act UncheckAllTasks (threeTaskTwoCheckedState())
-    |> should equal [ TaskWasUnchecked 1; TaskWasUnchecked 3; ]
+    |> should equal [ TaskWasUnchecked <| TaskId 1; TaskWasUnchecked <| TaskId 3; ]

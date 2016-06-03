@@ -6,11 +6,10 @@ open DevSharp.Validations
 open DevSharp.Validations.ValidationUtils
 open DevSharp.Annotations
 
-type TodoListTitle          = string
-type TaskId                 = int
-type TaskText               = string
+type TodoListTitle          = TodoListTitle of string
+type TaskId                 = TaskId of int
+type TaskText               = TaskText of string
 
-[<AggregateEvent>]
 type Event = 
 | WasCreated                of TodoListTitle
 | TitleWasUpdated           of TodoListTitle
@@ -20,7 +19,6 @@ type Event =
 | TaskWasChecked            of TaskId
 | TaskWasUnchecked          of TaskId
     
-[<AggregateCommand>]
 type Command =
 | Create                    of TodoListTitle
 | UpdateTitle               of TodoListTitle
@@ -36,15 +34,15 @@ type Command =
 
 type State =
     { 
-        title:      TodoListTitle; 
-        nextTaskId: TaskId; 
-        tasks:      TodoTask list;
+        title:      TodoListTitle
+        nextTaskId: TaskId
+        tasks:      TodoTask list
     }    
 and  TodoTask =
     { 
-        id:        TaskId; 
-        text:      TaskText; 
-        isChecked: bool;
+        id:        TaskId
+        text:      TaskText
+        isChecked: bool
     }
 
 [<AggregateInit>]
@@ -104,26 +102,30 @@ let act command state =
             |> List.filter (fun t -> t.isChecked) 
             |> List.map (fun t -> TaskWasUnchecked t.id)
 
+let getNextTaskId taskId =
+    match taskId with
+    | TaskId id -> TaskId (id + 1)
+
 [<AggregateApply>]
 let apply event state =
     match (state, event) with
     | (None, WasCreated title) ->
         Some { 
-            title = title; 
-            nextTaskId = 1; 
-            tasks = [];
+            title = title
+            nextTaskId = TaskId 1
+            tasks = []
         }
 
     | (Some state, TitleWasUpdated newTitle) -> 
         Some { 
         state with 
-            title = newTitle;
+            title = newTitle
         } 
 
     | (Some state, TaskWasAdded (id, text)) ->
         Some { 
         state with 
-            nextTaskId = state.nextTaskId + 1; 
+            nextTaskId = getNextTaskId state.nextTaskId
             tasks = state.tasks @ 
                     [ { id = id; text = text; isChecked = false } ] 
         }
@@ -169,62 +171,48 @@ let apply event state =
 
 [<AggregateValidate>]
 let validate command =
-    let validateId id =
+    let validateId taskId =
         seq {
-            if id <= 0 
-            then yield memberFailure "id" "Id must be positive"
+            match taskId with
+            | TaskId id ->
+                if id <= 0 
+                then yield memberFailure "id" "Id must be positive"
         }
 
     let validateTitle title =
         seq {
-            if String.IsNullOrEmpty title 
-            then yield memberFailure "title" "Title cannot be empty"
-            else if title.Length < 4 || title.Length > 100 
-                then yield memberFailure "title" "Title length must be between 4 and 100"
+            match title with
+            | TodoListTitle t ->
+                if String.IsNullOrEmpty t
+                then yield memberFailure "title" "Title cannot be empty"
+                else if t.Length < 4 || t.Length > 100 
+                    then yield memberFailure "title" "Title length must be between 4 and 100"
         }
 
     let validateTaskText text =
         seq {
-            if String.IsNullOrEmpty text 
-            then yield memberFailure "text" "Task text cannot be empty"
-            else if text.Length < 4 || text.Length > 100 
-                then yield memberFailure "text" "Task text length must be between 4 and 100"
+            match text with
+            | TaskText t ->
+                if String.IsNullOrEmpty t 
+                then yield memberFailure "text" "Task text cannot be empty"
+                else if t.Length < 4 || t.Length > 100 
+                    then yield memberFailure "text" "Task text length must be between 4 and 100"
         }
 
     in
     match command with
-        | Create title -> 
-            validateTitle title
-
-        | UpdateTitle title -> 
-            validateTitle title
-
-        | AddTask text -> 
-            validateTaskText text
-
+        | Create title -> validateTitle title
+        | UpdateTitle title -> validateTitle title
+        | AddTask text -> validateTaskText text
         | UpdateTask (id, text) ->
             seq { 
                 yield! validateId id
                 yield! validateTaskText text
             }
-
-        | RemoveTask id -> 
-            validateId id
-
-        | CheckTask id -> 
-            validateId id
-
-        | UncheckTask id -> 
-            validateId id
-
-        | RemoveAllTasks -> 
-            Seq.empty
-
-        | RemoveAllCheckedTasks -> 
-            Seq.empty
-
-        | CheckAllTasks -> 
-            Seq.empty
-
-        | UncheckAllTasks -> 
-            Seq.empty
+        | RemoveTask id -> validateId id
+        | CheckTask id -> validateId id
+        | UncheckTask id -> validateId id
+        | RemoveAllTasks -> Seq.empty
+        | RemoveAllCheckedTasks -> Seq.empty
+        | CheckAllTasks -> Seq.empty
+        | UncheckAllTasks -> Seq.empty
