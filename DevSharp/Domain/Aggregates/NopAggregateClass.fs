@@ -14,7 +14,7 @@ type NopAggregateClass() =
 
         member this.validate command request = validationResult []
 
-        member this.act command state request = Seq.empty
+        member this.act command state request = None
 
         member this.apply event state request = null
 

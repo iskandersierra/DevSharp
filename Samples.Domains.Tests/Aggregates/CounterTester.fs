@@ -5,11 +5,17 @@ open FsUnit
 open DevSharp.Testing
 open DevSharp.Testing.DomainTesting
 open Samples.Domains.Counter
+open NUnit.Framework.Constraints
 
 
 let eventType   = typedefof<Event>
 let commandType = typedefof<Command>
 let moduleType  = commandType.DeclaringType
+
+
+[<SetUp>]
+let testSetup () =
+    TestContext.AddFormatter(ValueFormatterFactory(fun _ -> ValueFormatter(sprintf "%A")))
 
 // Definition
 
@@ -54,10 +60,15 @@ let ``Counter initial state should be zero`` () =
 
 [<Test>]
 let ``Counter acting on Increment command over initial state gives WasIncremented`` () =
-    act Increment
-    |> should equal [ WasIncremented ]
+    act Increment init
+    |> should equal (Some [ WasIncremented ])
 
 [<Test>]
-let ``Counter acting on Decrement command over initial state gives WasDecremented`` () =
-    act Decrement
-    |> should equal [ WasDecremented ]
+let ``Counter acting on Decrement command over initial state gives no event`` () =
+    act Decrement init
+    |> should equal (Some List.empty<Event>)
+
+[<Test>]
+let ``Counter acting on Decrement command over 5 gives WasDecremented`` () =
+    act Decrement 5
+    |> should equal (Some [ WasDecremented ])

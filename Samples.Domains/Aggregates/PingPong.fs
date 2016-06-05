@@ -12,5 +12,5 @@ type Command =
 
 let act command = 
     match command with
-    | Ping -> [ WasPinged ]
-    | Pong -> [ WasPonged ]
+    | Ping -> Some [ WasPinged ]
+    | Pong -> Some [ WasPonged ]

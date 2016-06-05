@@ -6,6 +6,8 @@ open DevSharp.Domain.Aggregates
 open DevSharp.Server.Domain
 open Samples.Domains.PingPong
 open DevSharp.Messaging
+open NUnit.Framework.Constraints
+open DevSharp.Server.ReflectionUtils
 
 
 let aggregateModuleType = typedefof<Command>.DeclaringType
@@ -16,6 +18,7 @@ let message = "Helloooo!"
 [<SetUp>]
 let testSetup () =
     aggregateClass <- ModuleAggregateClass(aggregateModuleType)
+    TestContext.AddFormatter(ValueFormatterFactory(fun _ -> ValueFormatter(sprintf "%A")))
 
 [<Test>] 
 let ``loading a ModuleAggregateClass with PingPong aggregate module definition do not fail`` () =
@@ -35,7 +38,8 @@ let ``validating a Pong command should give a valid result`` () =
 [<Test>] 
 let ``acting with a Ping command over some state should return a WasPinged event`` () =
     aggregateClass.act Ping null request
-    |> should equal [ WasPinged ]
+    |> fromSeqOptToListOpt<Event>
+    |> should equal (Some [ WasPinged ])
 
 [<Test>] 
 let ``applying a WasPonged event over any state should return the initial state`` () =

@@ -178,8 +178,8 @@ let ``When Aggregate behavior, while Receiving, if it receive a failing command,
     match response with
     | ReceiveResult (output, state) ->
         match output with
-        | OutputMessage.ActFailed e -> ()
-        | _ -> Assert.Fail(sprintf "Response should be ActFailed but was %A" output)
+        | OutputMessage.InvalidCommand v -> ()
+        | _ -> Assert.Fail(sprintf "Response should be InvalidCommand but was %A" output)
         state |> should equal <| testingState Receiving 4 events
 
 [<Test>]

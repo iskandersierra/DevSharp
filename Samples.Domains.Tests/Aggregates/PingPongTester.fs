@@ -5,11 +5,18 @@ open FsUnit
 open DevSharp.Testing
 open DevSharp.Testing.DomainTesting
 open Samples.Domains.PingPong
+open NUnit.Framework.Constraints
 
 
 let eventType   = typedefof<Event>
 let commandType = typedefof<Command>
 let moduleType  = commandType.DeclaringType
+
+
+[<SetUp>]
+let testSetup () =
+    TestContext.AddFormatter(ValueFormatterFactory(fun _ -> ValueFormatter(sprintf "%A")))
+
 
 // Definition
 
@@ -50,9 +57,9 @@ let ``PingPong Command should be defined as expected`` () =
 [<Test>]
 let ``PingPong acting on Ping command over initial state gives WasPinged`` () =
     act Ping 
-    |> should equal [ WasPinged ]
+    |> should equal (Some [ WasPinged ])
 
 [<Test>]
 let ``PingPong acting on Pong command over initial state gives WasPonged`` () =
     act Pong 
-    |> should equal [ WasPonged ]
+    |> should equal (Some [ WasPonged ])

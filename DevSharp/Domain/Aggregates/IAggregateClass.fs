@@ -18,6 +18,6 @@ type IAggregateClass =
 
     abstract member validate: CommandType -> Request -> ValidationResult
 
-    abstract member act: CommandType -> StateType -> Request -> EventType seq
+    abstract member act: CommandType -> StateType -> Request -> EventType seq option
 
     abstract member apply: EventType -> StateType -> Request -> StateType

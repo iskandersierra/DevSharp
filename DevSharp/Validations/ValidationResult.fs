@@ -12,6 +12,7 @@ type ValidationItem =
 | Failure           of ValidationMessage * FailureType
 and FailureType =
 | UnknownFailure
+| CommandFailure
 | MemberFailure     of MemberName
 | ExceptionFailure  of Exception
 

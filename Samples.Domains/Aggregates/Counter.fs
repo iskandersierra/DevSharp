@@ -11,10 +11,13 @@ type Command =
 
 let init = 0
 
-let act command = 
+let act command value = 
     match command with
-    | Increment -> [ WasIncremented ]
-    | Decrement -> [ WasDecremented ]
+    | Increment -> Some [ WasIncremented ]
+    | Decrement -> 
+        if value > 0 
+        then Some [ WasDecremented ]
+        else Some List.empty
 
 let apply event value = 
     match event with

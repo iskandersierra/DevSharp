@@ -31,11 +31,11 @@ let testingInit = { incCount = 0; decCount = 0; }
 [<AggregateAct>]
 let testingAct command = 
     match command with
-    | Increment -> [ Incremented ]
-    | Decrement -> [ Decremented ]
-    | NopCommand -> [ ]
-    | FailingCommand -> raise (InvalidOperationException "Failing command")
-    | InvalidCommand -> [ Incremented ]
+    | Increment -> Some [ Incremented ]
+    | Decrement -> Some [ Decremented ]
+    | NopCommand -> Some [ ]
+    | FailingCommand -> None
+    | InvalidCommand -> Some [ Incremented ]
 
 [<AggregateApply>]
 let testingApply event state = 

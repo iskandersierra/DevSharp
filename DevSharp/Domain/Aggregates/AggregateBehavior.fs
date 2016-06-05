@@ -3,6 +3,7 @@
 open System
 open DevSharp.Messaging
 open DevSharp.Validations
+open DevSharp.Validations.ValidationUtils
 
 
 type AggregateId      = string // guid
@@ -36,6 +37,7 @@ type Mode =
 | Receiving
 | Emitting
 
+
 type BehaviorState =
     {
         mode: Mode;
@@ -48,8 +50,13 @@ type BehaviorState =
 type ReceiveResult =
 | ReceiveResult of OutputMessage * BehaviorState
 
-let receiveResult output behavior = 
-    ReceiveResult (output, behavior)
+let receiveResult output behavior = ReceiveResult (output, behavior)
+let eventsEmitted events behavior = receiveResult (EventsEmitted events) behavior
+let invalidCommand result behavior = receiveResult (InvalidCommand result) behavior
+let validateFailed ex behavior = receiveResult (ValidateFailed ex) behavior
+let actFailed ex behavior = receiveResult (ActFailed ex) behavior
+let applyFailed ex behavior = receiveResult (ApplyFailed ex) behavior
+let loadingFailed ex behavior = receiveResult (LoadingFailed ex) behavior
 
 
 (*     Internal functions      *)
@@ -64,11 +71,14 @@ type ValidateCommandResult =
 let validateCommand behavior command request =
     try
         let result = behavior.class'.validate command request
-        if result.isValid 
-        then IsValidCommand result
-        else IsInvalidCommand result
+        match result.isValid with
+        | true -> 
+            IsValidCommand result
+        | false -> 
+            IsInvalidCommand result
     with 
-    | _ as ex -> ValidationHasFailed ex
+    | _ as ex -> 
+        ValidationHasFailed ex
 
 type ApplyEventResult =
 | EventWasApplied of BehaviorState
@@ -90,17 +100,24 @@ let rec applyEvents behavior events request =
     | [] -> EventWasApplied behavior
     | event :: tail ->
         match applyEvent behavior event request with
-        | ApplyEventHasFailed ex -> ApplyEventHasFailed ex
-        | EventWasApplied newState -> applyEvents newState tail request
+        | ApplyEventHasFailed ex -> 
+            ApplyEventHasFailed ex
+        | EventWasApplied newState -> 
+            applyEvents newState tail request
 
 type ActOnCommandResult =
 | CommandWasActedOn of EventType list
+| CommandWasNotActedOn
 | ActOnCommandHasFailed of Exception
 
 let actOnCommand bahavior state command request =
     try
-        let events = bahavior.class'.act command state request
-        CommandWasActedOn ( Seq.toList events )
+        let maybeEvents = bahavior.class'.act command state request
+        match maybeEvents with
+        | Some events -> 
+            CommandWasActedOn ( Seq.toList events )
+        | None -> 
+            CommandWasNotActedOn
     with
     | _ as ex ->
         ActOnCommandHasFailed ex
@@ -111,13 +128,19 @@ let receiveWhileLoading behavior message request =
     match message with
     | LoadEvent event -> 
         match applyEvent behavior event request with
-        | EventWasApplied newState -> receiveResult MessageAccepted newState
-        | ApplyEventHasFailed ex -> receiveResult <| LoadingFailed ex <| behavior
+        | EventWasApplied newState -> 
+            receiveResult MessageAccepted newState
+        | ApplyEventHasFailed ex -> 
+            loadingFailed ex behavior
         
-    | LoadError ex -> receiveResult <| LoadingFailed ex <| behavior
-    | LoadDone -> receiveResult MessageAccepted { behavior with mode = Receiving }
-    | ReceiveCommand _ -> receiveResult PostponeMessage behavior
-    | ApplyEvents _ -> receiveResult MessageRejected behavior
+    | LoadError ex -> 
+        loadingFailed ex behavior
+    | LoadDone -> 
+        receiveResult MessageAccepted { behavior with mode = Receiving }
+    | ReceiveCommand _ -> 
+        receiveResult PostponeMessage behavior
+    | ApplyEvents _ -> 
+        receiveResult MessageRejected behavior
 
 let receiveWhileReceiving behavior message request =
     match message with
@@ -126,12 +149,18 @@ let receiveWhileReceiving behavior message request =
         then receiveResult UnexpectedVersion behavior
         else
             match validateCommand behavior command request with
-            | ValidationHasFailed ex -> receiveResult (ValidateFailed ex) behavior
-            | IsInvalidCommand result -> receiveResult (InvalidCommand result) behavior
+            | ValidationHasFailed ex -> 
+                validateFailed ex behavior
+            | IsInvalidCommand result -> 
+                invalidCommand result behavior
             | IsValidCommand _ -> 
                 match actOnCommand behavior behavior.state command request with
-                | ActOnCommandHasFailed ex -> receiveResult (ActFailed ex) behavior
-                | CommandWasActedOn events -> receiveResult (EventsEmitted events) { behavior with mode = Emitting }
+                | ActOnCommandHasFailed ex -> 
+                    actFailed ex behavior
+                | CommandWasActedOn events -> 
+                    eventsEmitted events { behavior with mode = Emitting }
+                | CommandWasNotActedOn -> 
+                    invalidCommand (commandFailureResult "Command was not supposed to be received on current state") behavior
                         
     | _ -> receiveResult MessageRejected behavior
 
@@ -139,10 +168,14 @@ let receiveWhileEmitting behavior message request =
     match message with
     | ApplyEvents events -> 
         match applyEvents behavior events request with
-        | EventWasApplied newState -> receiveResult MessageAccepted { newState with mode = Receiving }
-        | ApplyEventHasFailed ex -> receiveResult (ApplyFailed ex) { behavior with mode = Receiving }
-    | ReceiveCommand _ -> receiveResult PostponeMessage behavior
-    | _ -> receiveResult MessageRejected behavior
+        | EventWasApplied newState -> 
+            receiveResult MessageAccepted { newState with mode = Receiving }
+        | ApplyEventHasFailed ex -> 
+            applyFailed ex { behavior with mode = Receiving }
+    | ReceiveCommand _ -> 
+        receiveResult PostponeMessage behavior
+    | _ -> 
+        receiveResult MessageRejected behavior
 
 
 (*     init & receive      *)

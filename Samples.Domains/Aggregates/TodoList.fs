@@ -53,54 +53,65 @@ let init: State option =
 let act command state =
     match (state, command) with
         | (None, Create title) -> 
-            [ WasCreated title ]
+            Some [ WasCreated title ]
 
         | (Some state, UpdateTitle newTitle) -> 
             if state.title <> newTitle 
-            then [ TitleWasUpdated newTitle ] 
-            else []
+            then Some [ TitleWasUpdated newTitle ] 
+            else Some []
 
         | (Some state, AddTask text) ->
-            [ TaskWasAdded (state.nextTaskId, text) ]
+            Some [ TaskWasAdded (state.nextTaskId, text) ]
 
         | (Some state, UpdateTask (id, text)) ->
             state.tasks 
             |> List.filter (fun t -> t.id = id && t.text <> text) 
             |> List.map (fun t -> TaskWasUpdated (t.id, text))
+            |> Some
 
         | (Some state, RemoveTask id) ->
             state.tasks 
             |> List.filter (fun t -> t.id = id) 
             |> List.map (fun t -> TaskWasRemoved t.id)
+            |> Some
 
         | (Some state, CheckTask id) ->
             state.tasks 
             |> List.filter (fun t -> t.id = id && not t.isChecked) 
             |> List.map (fun t -> TaskWasChecked t.id)
+            |> Some
 
         | (Some state, UncheckTask id) ->
             state.tasks 
             |> List.filter (fun t -> t.id = id && t.isChecked) 
             |> List.map (fun t -> TaskWasUnchecked t.id)
+            |> Some
 
         | (Some state, RemoveAllTasks) ->
             state.tasks 
             |> List.map (fun t -> TaskWasRemoved t.id)
+            |> Some
 
         | (Some state, RemoveAllCheckedTasks) ->
             state.tasks 
             |> List.filter (fun t -> t.isChecked) 
             |> List.map (fun t -> TaskWasRemoved t.id)
+            |> Some
 
         | (Some state, CheckAllTasks) ->
             state.tasks 
             |> List.filter (fun t -> not t.isChecked) 
             |> List.map (fun t -> TaskWasChecked t.id)
+            |> Some
 
         | (Some state, UncheckAllTasks) ->
             state.tasks 
             |> List.filter (fun t -> t.isChecked) 
             |> List.map (fun t -> TaskWasUnchecked t.id)
+            |> Some
+
+        | (_, _) ->
+            None
 
 let getNextTaskId taskId =
     match taskId with
@@ -168,6 +179,9 @@ let apply event state =
             tasks = state.tasks 
                     |> List.map uncheckedTask 
         }
+
+    | (_, _) ->
+        state
 
 [<AggregateValidate>]
 let validate command =

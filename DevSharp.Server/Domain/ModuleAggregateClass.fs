@@ -13,9 +13,8 @@ open DevSharp.Server
 open DevSharp.Server.ReflectionUtils
 
 type validateDelegate = Func<obj, Request, ValidationItem seq>
-type actDelegate = Func<obj, obj, Request, obj seq>
+type actDelegate = Func<obj, obj, Request, obj seq option>
 type applyDelegate = Func<obj, obj, Request, obj>
-type ActResultType = | SingleEvent = 0 | EventList = 1 | EventSeq = 2
 
 type ModuleAggregateClass (aggregateModule: Type) =
     
@@ -49,23 +48,19 @@ type ModuleAggregateClass (aggregateModule: Type) =
                 containerName
                 typedefof<AggregateActAttribute> 
                 "act"
-                //( getListType eventType )
-                //[ commandType; stateType; requestType ]
                 false
 
         let parameters = actMethod.GetParameters()
         let paramCount = parameters.Length
         let cmdType = parameters.[0].ParameterType
-        let (evType, actType) =
-            if actMethod.ReturnType = typeOfString 
-            then (typeOfString, ActResultType.SingleEvent)
-            else
-                match matchGenericInterface typeOfSeq actMethod.ReturnType with
-                | Some [ ev ] -> 
-                    match matchGenericClass typeOfFSharpList actMethod.ReturnType with
-                    | Some [ _ ] -> (ev, ActResultType.EventList)
-                    | _ -> (ev, ActResultType.EventSeq)
-                | _ -> (actMethod.ReturnType, ActResultType.SingleEvent)
+        let evType =
+            match matchGenericClass typeOfOption actMethod.ReturnType with
+            | Some [ listType ] ->
+                match matchGenericClass typeOfList listType with
+                | Some [ eventType ] ->
+                    eventType
+                | _ -> failwith (sprintf "function %s of module %s should return an Event list option" actMethod.Name aggregateFullName)
+            | _ -> failwith (sprintf "function %s of module %s should return an Event list option" actMethod.Name aggregateFullName)
 
 
         let commandParameter = Expression.Parameter(typedefof<obj>, "command");
@@ -83,12 +78,9 @@ type ModuleAggregateClass (aggregateModule: Type) =
             | 3 -> (Expression.Call(actMethod, castCommandExpr, castStateExpr, requestParameter), true)
             | _ -> raise (NotSupportedException (sprintf "Aggregate function %s cannot have %i parameters" actMethod.Name paramCount))
 
-        // MyModule.act (...).Cast<object>()
+        // MyModule.act (...).fromListOptToSeqOpt()
         let finalExpr = 
-            match actType with
-            | ActResultType.EventList -> callAct
-            | ActResultType.EventSeq -> callAct
-            | ActResultType.SingleEvent -> Expression.Call(methodSeqModuleSingleton.MakeGenericMethod(evType), callAct)
+            Expression.Call(methodFromListOptToSeqOpt.MakeGenericMethod(evType), callAct)
 
         // (command, state, request) => MyModule.act (...)....
         let lambdaExpr = Expression.Lambda<actDelegate>(finalExpr, commandParameter, stateParameter, requestParameter)
@@ -104,8 +96,6 @@ type ModuleAggregateClass (aggregateModule: Type) =
                 containerName
                 typedefof<AggregateValidateAttribute> 
                 "validate"
-                //( getSeqType typedefof<ValidationItem> )
-                //[ commandType; ]
                 true
 
         match actMethod with
@@ -137,8 +127,6 @@ type ModuleAggregateClass (aggregateModule: Type) =
                 containerName
                 typedefof<AggregateApplyAttribute> 
                 "apply"
-                //( stateType )
-                //[ eventType; stateType; requestType ]
                 true
 
         match actMethod with

@@ -94,6 +94,11 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\DevSharp.Server\DevSharp.Server.fsproj">
+      <Name>DevSharp.Server</Name>
+      <Project>{885966b8-aa91-4f01-95a0-cbfe10856aea}</Project>
+      <Private>True</Private>
+    </ProjectReference>
     <ProjectReference Include="..\DevSharp.Testing\DevSharp.Testing.fsproj">
       <Name>DevSharp.Testing</Name>
       <Project>{9fb99f24-2c12-4ce2-8762-e1301a6e921a}</Project>

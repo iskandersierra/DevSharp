@@ -5,11 +5,18 @@ open FsUnit
 open DevSharp.Testing
 open DevSharp.Testing.DomainTesting
 open Samples.Domains.Echoer
+open NUnit.Framework.Constraints
 
 
 let eventType   = typedefof<Event>
 let commandType = typedefof<Command>
 let moduleType  = commandType.DeclaringType
+
+
+
+[<SetUp>]
+let testSetup () =
+    TestContext.AddFormatter(ValueFormatterFactory(fun _ -> ValueFormatter(sprintf "%A")))
 
 
 // Definition
@@ -56,5 +63,5 @@ let ``Echoer initial state should be null`` () =
 [<Test>]
 let ``Echoer acting on Echo command with message over initial state gives WasEchoed with the same message`` () =
     act (Echo message) 
-    |> should equal [ WasEchoed message ]
+    |> should equal (Some [ WasEchoed message ])
 

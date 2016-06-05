@@ -6,6 +6,8 @@ open DevSharp.Messaging
 open DevSharp.Domain.Aggregates
 open DevSharp.Server.Domain
 open Samples.Domains.Counter
+open NUnit.Framework.Constraints
+open DevSharp.Server.ReflectionUtils
 
 
 let aggregateModuleType = typedefof<Command>.DeclaringType
@@ -16,6 +18,7 @@ let message = "Helloooo!"
 [<SetUp>]
 let testSetup () =
     aggregateClass <- ModuleAggregateClass(aggregateModuleType)
+    TestContext.AddFormatter(ValueFormatterFactory(fun _ -> ValueFormatter(sprintf "%A")))
 
 [<Test>] 
 let ``loading a ModuleAggregateClass with Counter aggregate module definition do not fail`` () =
@@ -35,7 +38,8 @@ let ``validating a Decrement command should give a valid result`` () =
 [<Test>] 
 let ``acting with a Increment command over some state should return a WasEchod event`` () =
     aggregateClass.act Increment init request
-    |> should equal [ WasIncremented ]
+    |> fromSeqOptToListOpt<Event>
+    |> should equal (Some [ WasIncremented ])
 
 [<Test>] 
 let ``applying a WasDecremented event over any state should return the initial state`` () =

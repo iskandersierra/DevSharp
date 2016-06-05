@@ -6,6 +6,7 @@ open FsUnit
 open DevSharp.Testing
 open DevSharp.Testing.DomainTesting
 open Samples.Domains.TodoList
+open NUnit.Framework.Constraints
 
 
 let shortTextLength = 3
@@ -16,6 +17,11 @@ let longText        = String ('a', longTextLength)
 let eventType   = typedefof<Event>
 let commandType = typedefof<Command>
 let moduleType  = commandType.DeclaringType
+
+
+[<SetUp>]
+let testSetup () =
+    TestContext.AddFormatter(ValueFormatterFactory(fun _ -> ValueFormatter(sprintf "%A")))
 
 // Definition
 
@@ -89,179 +95,179 @@ let ``TodoList initial state should be null`` () =
 [<Test>]
 let ``TodoList acting with Create command with initTitle over initial state should give WasCreated with the same initTitle`` () =
     act (Create initTitle) init
-    |> should equal [ WasCreated initTitle ]
+    |> should equal (Some [ WasCreated initTitle ])
 
 [<Test>]
-let ``TodoList acting with Create command over some state should fail`` () =
-    (fun () -> act (Create initTitle) (createdState()) |> ignore)
-    |> should throw typeof<MatchFailureException>
+let ``TodoList acting with Create command over some state should return None`` () =
+    act (Create initTitle) (createdState())
+    |> should be Null
 
 [<Test>]
-let ``TodoList acting with UpdateTitle command over initial state should fail`` () =
-    (fun () -> act (UpdateTitle initTitle) init |> ignore)
-    |> should throw typeof<MatchFailureException>
+let ``TodoList acting with UpdateTitle command over initial state should return None`` () =
+    act (UpdateTitle initTitle) init
+    |> should be Null
 
 [<Test>]
 let ``TodoList acting with UpdateTitle command with initTitle over some state should give no events`` () =
     act (UpdateTitle initTitle) (createdState())
-    |> should equal [ ]
+    |> should equal (Some List.empty<Event>)
 
 [<Test>]
 let ``TodoList acting with UpdateTitle command with title over some state should give TitleWasUpdated with the same title`` () =
     act (UpdateTitle title) (createdState())
-    |> should equal [ TitleWasUpdated title ]
+    |> should equal (Some [ TitleWasUpdated title ])
 
 [<Test>]
-let ``TodoList acting with AddTask command over initial state should fail`` () =
-    (fun () -> act (AddTask initText) init |> ignore)
-    |> should throw typeof<MatchFailureException>
+let ``TodoList acting with AddTask command over initial state should return None`` () =
+    act (AddTask initText) init 
+    |> should be Null
 
 [<Test>]
 let ``TodoList acting with AddTask command with initText over some state should give TaskWasAdded with the same initText`` () =
     act (AddTask initText) (createdState())
-    |> should equal [ TaskWasAdded (TaskId 1, initText) ]
+    |> should equal (Some [ TaskWasAdded (TaskId 1, initText) ])
 
 [<Test>]
-let ``TodoList acting with UpdateTask command over initial state should fail`` () =
-    (fun () -> act (UpdateTask (TaskId 1, initText)) init |> ignore)
-    |> should throw typeof<MatchFailureException>
+let ``TodoList acting with UpdateTask command over initial state should return None`` () =
+    act (UpdateTask (TaskId 1, initText)) init 
+    |> should be Null
 
 [<Test>]
 let ``TodoList acting with UpdateTask command with initTitle over some state should give no events`` () =
     act (UpdateTask (TaskId 1, initText)) (createdState())
-    |> should equal [ ]
+    |> should equal (Some List.empty<Event>)
 
 [<Test>]
 let ``TodoList acting with UpdateTask command with title over some state should give TaskWasUpdated with the same title`` () =
     act (UpdateTask (TaskId 1, initText)) (twoTaskState())
-    |> should equal [ TaskWasUpdated (TaskId 1, initText) ]
+    |> should equal (Some [ TaskWasUpdated (TaskId 1, initText) ])
 
 [<Test>]
-let ``TodoList acting with RemoveTask command over initial state should fail`` () =
-    (fun () -> act (RemoveTask <| TaskId 1) init |> ignore)
-    |> should throw typeof<MatchFailureException>
+let ``TodoList acting with RemoveTask command over initial state should return None`` () =
+    act (RemoveTask <| TaskId 1) init
+    |> should be Null
 
 [<Test>]
 let ``TodoList acting with RemoveTask command with initTitle over some state should give no events`` () =
     act (RemoveTask <| TaskId 1) (createdState())
-    |> should equal [ ]
+    |> should equal (Some List.empty<Event>)
 
 [<Test>]
 let ``TodoList acting with RemoveTask command with title over some state should give TaskWasRemoved with the same title`` () =
     act (RemoveTask <| TaskId 1) (twoTaskState())
-    |> should equal [ TaskWasRemoved <| TaskId 1 ]
+    |> should equal (Some [ TaskWasRemoved <| TaskId 1 ])
 
 [<Test>]
-let ``TodoList acting with CheckTask command over initial state should fail`` () =
-    (fun () -> act (CheckTask <| TaskId 1) init |> ignore)
-    |> should throw typeof<MatchFailureException>
+let ``TodoList acting with CheckTask command over initial state should return None`` () =
+    act (CheckTask <| TaskId 1) init 
+    |> should be Null
 
 [<Test>]
 let ``TodoList acting with CheckTask command with id over empty state should give no events`` () =
     act (CheckTask <| TaskId 1) (createdState())
-    |> should equal [ ]
+    |> should equal (Some List.empty<Event>)
 
 [<Test>]
 let ``TodoList acting with CheckTask command with id over checked task should give no events`` () =
     act (CheckTask <| TaskId 1) (threeTaskTwoCheckedState())
-    |> should equal [ ]
+    |> should equal (Some List.empty<Event>)
 
 [<Test>]
 let ``TodoList acting with CheckTask command with id over some state should give TaskWasChecked with the same id`` () =
     act (CheckTask <| TaskId 1) (threeTaskState())
-    |> should equal [ TaskWasChecked <| TaskId 1 ]
+    |> should equal (Some [ TaskWasChecked <| TaskId 1 ])
 
 [<Test>]
-let ``TodoList acting with UncheckTask command over initial state should fail`` () =
-    (fun () -> act (UncheckTask <| TaskId 1) init |> ignore)
-    |> should throw typeof<MatchFailureException>
+let ``TodoList acting with UncheckTask command over initial state should return None`` () =
+    act (UncheckTask <| TaskId 1) init 
+    |> should be Null
 
 [<Test>]
 let ``TodoList acting with UncheckTask command with id over empty state should give no events`` () =
     act (UncheckTask <| TaskId 1) (createdState())
-    |> should equal [ ]
+    |> should equal (Some List.empty<Event>)
 
 [<Test>]
 let ``TodoList acting with UncheckTask command with id over unchecked task should give no events`` () =
     act (UncheckTask <| TaskId 1) (threeTaskState())
-    |> should equal [ ]
+    |> should equal (Some List.empty<Event>)
 
 [<Test>]
 let ``TodoList acting with UncheckTask command with id over checked task should give TaskWasUnchecked with the same id`` () =
     act (UncheckTask <| TaskId 1) (threeTaskTwoCheckedState())
-    |> should equal [ TaskWasUnchecked <| TaskId 1 ]
+    |> should equal (Some [ TaskWasUnchecked <| TaskId 1 ])
 
 [<Test>]
-let ``TodoList acting with RemoveAllTasks command over initial state should fail`` () =
-    (fun () -> act RemoveAllTasks init |> ignore)
-    |> should throw typeof<MatchFailureException>
+let ``TodoList acting with RemoveAllTasks command over initial state should return None`` () =
+    act RemoveAllTasks init 
+    |> should be Null
 
 [<Test>]
 let ``TodoList acting with RemoveAllTasks command over empty state should give no events`` () =
     act RemoveAllTasks (createdState())
-    |> should equal [ ]
+    |> should equal (Some List.empty<Event>)
 
 [<Test>]
 let ``TodoList acting with RemoveAllTasks command over some state should give various TaskWasRemoved events`` () =
     act RemoveAllTasks (threeTaskTwoCheckedState())
-    |> should equal [ TaskWasRemoved <| TaskId 1; TaskWasRemoved <| TaskId 2; TaskWasRemoved <| TaskId 3; ]
+    |> should equal (Some [ TaskWasRemoved <| TaskId 1; TaskWasRemoved <| TaskId 2; TaskWasRemoved <| TaskId 3; ])
 
 [<Test>]
-let ``TodoList acting with RemoveAllCheckedTasks command over initial state should fail`` () =
-    (fun () -> act RemoveAllCheckedTasks init |> ignore)
-    |> should throw typeof<MatchFailureException>
+let ``TodoList acting with RemoveAllCheckedTasks command over initial state should return None`` () =
+    act RemoveAllCheckedTasks init 
+    |> should be Null
 
 [<Test>]
 let ``TodoList acting with RemoveAllCheckedTasks command over empty state should give no events`` () =
     act RemoveAllCheckedTasks (createdState())
-    |> should equal [ ]
+    |> should equal (Some List.empty<Event>)
 
 [<Test>]
 let ``TodoList acting with RemoveAllCheckedTasks command over state with no checked tasks should give no events`` () =
     act RemoveAllCheckedTasks (threeTaskState())
-    |> should equal [ ]
+    |> should equal (Some List.empty<Event>)
 
 [<Test>]
 let ``TodoList acting with RemoveAllCheckedTasks command over some state should give various TaskWasRemoved events`` () =
     act RemoveAllCheckedTasks (threeTaskTwoCheckedState())
-    |> should equal [ TaskWasRemoved <| TaskId 1; TaskWasRemoved <| TaskId 3; ]
+    |> should equal (Some [ TaskWasRemoved <| TaskId 1; TaskWasRemoved <| TaskId 3; ])
 
 [<Test>]
-let ``TodoList acting with CheckAllTasks command over initial state should fail`` () =
-    (fun () -> act CheckAllTasks init |> ignore)
-    |> should throw typeof<MatchFailureException>
+let ``TodoList acting with CheckAllTasks command over initial state should return None`` () =
+    act CheckAllTasks init 
+    |> should be Null
 
 [<Test>]
 let ``TodoList acting with CheckAllTasks command over empty state should give no events`` () =
     act CheckAllTasks (createdState())
-    |> should equal [ ]
+    |> should equal (Some List.empty<Event>)
 
 [<Test>]
 let ``TodoList acting with CheckAllTasks command over state with no unchecked tasks should give no events`` () =
     act CheckAllTasks (threeTaskAllCheckedState())
-    |> should equal [ ]
+    |> should equal (Some List.empty<Event>)
 
 [<Test>]
 let ``TodoList acting with CheckAllTasks command over some state should give various TaskWasChecked events`` () =
     act CheckAllTasks (threeTaskTwoCheckedState())
-    |> should equal [ TaskWasChecked <| TaskId 2; ]
+    |> should equal (Some [ TaskWasChecked <| TaskId 2; ])
 
 [<Test>]
-let ``TodoList acting with UncheckAllTasks command over initial state should fail`` () =
-    (fun () -> act UncheckAllTasks init |> ignore)
-    |> should throw typeof<MatchFailureException>
+let ``TodoList acting with UncheckAllTasks command over initial state should return None`` () =
+    act UncheckAllTasks init 
+    |> should be Null
 
 [<Test>]
 let ``TodoList acting with UncheckAllTasks command over empty state should give no events`` () =
     act UncheckAllTasks (createdState())
-    |> should equal [ ]
+    |> should equal (Some List.empty<Event>)
 
 [<Test>]
 let ``TodoList acting with UncheckAllTasks command over state with no unchecked tasks should give no events`` () =
     act UncheckAllTasks (threeTaskState())
-    |> should equal [ ]
+    |> should equal (Some List.empty<Event>)
 
 [<Test>]
 let ``TodoList acting with UncheckAllTasks command over some state should give various TaskWasUnchecked events`` () =
     act UncheckAllTasks (threeTaskTwoCheckedState())
-    |> should equal [ TaskWasUnchecked <| TaskId 1; TaskWasUnchecked <| TaskId 3; ]
+    |> should equal (Some [ TaskWasUnchecked <| TaskId 1; TaskWasUnchecked <| TaskId 3; ])

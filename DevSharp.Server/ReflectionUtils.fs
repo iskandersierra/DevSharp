@@ -3,19 +3,23 @@
 open System
 open System.Reflection
 
+let typeOfReflectionUtils = Assembly.GetExecutingAssembly().GetType("DevSharp.Server.ReflectionUtils")
 let typeOfObj = typedefof<obj>
 let typeOfVoid = typedefof<Void>
 let typeOfUnit = typedefof<unit>
 let typeOfString = typedefof<string>
-let typeOfFSharpList = typedefof<FSharp.Collections.List<_>>
-let typeOfFSharpOption = typedefof<FSharp.Core.Option<_>>
+let typeOfList = typedefof<FSharp.Collections.List<_>>
+let typeOfOption = typedefof<FSharp.Core.Option<_>>
 let typeOfSeq = typedefof<System.Collections.Generic.IEnumerable<_>>
-let typeOfEnumerable = typedefof<System.Linq.Enumerable>
-let typeOfSeqModule = typeOfFSharpList.Assembly.GetType("Microsoft.FSharp.Collections.SeqModule")
+// let typeOfEnumerable = typedefof<System.Linq.Enumerable>
+let typeOfSeqModule = typeOfList.Assembly.GetType("Microsoft.FSharp.Collections.SeqModule")
+let typeOfOptionModule = typeOfOption.Assembly.GetType("Microsoft.FSharp.Core.OptionModule")
 
-let methodEnumerableCast = typeOfEnumerable.GetMethod("Cast")
+let methodFromListOptToSeqOpt = typeOfReflectionUtils.GetMethod("fromListOptToSeqOpt")
 let methodSeqModuleToList = typeOfSeqModule.GetMethod("ToList")
+let methodSeqModuleCast = typeOfSeqModule.GetMethod("Cast")
 let methodSeqModuleSingleton = typeOfSeqModule.GetMethod("Singleton")
+let methodOptionModuleBind = typeOfOptionModule.GetMethod("Bind")
 
 
 let isVoidType (t: Type) =
@@ -29,8 +33,9 @@ let areSameType (a: Type) (b: Type) =
 let matchGenericInterface (genericInterface: Type) (t: Type) =
     if not genericInterface.IsInterface then failwith "genericInterface must be an interface"
     let typeDef = genericInterface.GetGenericTypeDefinition()
+    let candidates = t.GetInterfaces()
     let concrete = 
-        t.GetInterfaces()
+        candidates
         |> Array.tryFind (fun it -> it.IsGenericType && it.GetGenericTypeDefinition() = typeDef)
     match concrete with
     | None -> None
@@ -39,9 +44,11 @@ let matchGenericInterface (genericInterface: Type) (t: Type) =
 let matchGenericClass (genericClass: Type) (t: Type) =
     if not genericClass.IsClass then failwith "genericClass must be a class"
     let typeDef = genericClass.GetGenericTypeDefinition()
-    let concrete = 
+    let candidates = 
         t 
-        |> Array.unfold (fun x -> if x.BaseType = typeOfObj then None else Some (x.BaseType, x.BaseType))
+        |> Array.unfold (fun x -> if x.BaseType = null then None else Some (x, x.BaseType))
+    let concrete = 
+        candidates
         |> Array.tryFind (fun it -> it.IsGenericType && it.GetGenericTypeDefinition() = typeDef)
     match concrete with
     | None -> None
@@ -117,13 +124,46 @@ let findModuleMethod (moduleType: Type) containerName attrType defaultName (isOp
 
 
 let getListType (elementType: Type) =
-    typeOfFSharpList.MakeGenericType elementType
+    typeOfList.MakeGenericType elementType
 
 let getOptionType (elementType: Type) =
-    typeOfFSharpOption.MakeGenericType elementType
+    typeOfOption.MakeGenericType elementType
 
 let getSeqType (elementType: Type) =
     typeOfSeq.MakeGenericType elementType
 
-let getMethodEnumerableCast (elementType: Type) =
-    methodEnumerableCast.MakeGenericMethod elementType
+let fromListOptToSeqOpt (optList: 'a list option) =
+    match optList with
+    | None -> None
+    | Some list -> 
+        list 
+        |> List.toSeq 
+        |> Seq.map (fun s -> s :> obj) 
+        |> Some
+
+let fromSeqOptToListOpt<'a> (optList: obj seq option) : 'a list option =
+    match optList with
+    | None -> None
+    | Some sequence -> 
+        sequence 
+        |> Seq.map (fun s -> s :?> 'a) 
+        |> Seq.toList 
+        |> Some
+//
+//let fromSeqToList<'a> (optSeq: 'a seq option) : 'a list option =
+//    match optSeq with
+//    | None -> None
+//    | Some sequence -> 
+//        sequence 
+//        |> Seq.toList 
+//        |> Some
+//
+//let fromListToSeq<'a> (optList: 'a list option) : 'a seq option =
+//    match optList with
+//    | None -> None
+//    | Some list -> 
+//        list
+//        |> List.toSeq 
+//        |> Some
+//
+//

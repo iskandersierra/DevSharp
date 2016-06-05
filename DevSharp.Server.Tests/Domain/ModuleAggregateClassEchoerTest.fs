@@ -6,6 +6,8 @@ open DevSharp.Domain.Aggregates
 open DevSharp.Server.Domain
 open Samples.Domains.Echoer
 open DevSharp.Messaging
+open NUnit.Framework.Constraints
+open DevSharp.Server.ReflectionUtils
 
 
 let aggregateModuleType = typedefof<Command>.DeclaringType
@@ -16,6 +18,7 @@ let message = "Helloooo!"
 [<SetUp>]
 let testSetup () =
     aggregateClass <- ModuleAggregateClass(aggregateModuleType)
+    TestContext.AddFormatter(ValueFormatterFactory(fun _ -> ValueFormatter(sprintf "%A")))
 
 [<Test>] 
 let ``loading a ModuleAggregateClass with Echoer aggregate module definition do not fail`` () =
@@ -35,7 +38,8 @@ let ``validating a message-less Echo command should give a valid result`` () =
 [<Test>] 
 let ``acting with a Echo command over some state should return a WasEchod event`` () =
     aggregateClass.act (Echo message) init request
-    |> should equal [ WasEchoed message ]
+    |> fromSeqOptToListOpt<Event>
+    |> should equal (Some [ WasEchoed message ])
 
 [<Test>] 
 let ``applying a WasEchoed event over any state should return the initial state`` () =
