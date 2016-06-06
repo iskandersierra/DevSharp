@@ -12,6 +12,7 @@ open Samples.EmailProjection
 
 let instanceType   = typedefof<Instance>
 let moduleType  = instanceType.DeclaringType
+let request = Request(Map.empty<string,obj>)
 
 
 [<Test>]
@@ -21,25 +22,18 @@ let ``EmailProjection fullname should be Samples.EmailProjection`` () =
 
 [<Test>]
 let ``Update subject should produce the same email with the new subject`` () =
-    update 
-        { 
-            id=Guid.Empty
-            subject="" 
-            from="a@aa.com" 
-            toEmails=["b@bb.com"] 
-            ccEmails=[] 
-            bccEmails =[] 
-            body="..." 
-        } (SubjectWasUpdated (Guid.Empty, "New Subject")) (Request(Unchecked.defaultof<Map<string,obj>>)) 
-    |> should equal 
-        { 
-            id=Guid.Empty
-            subject="New Subject"
-            from="a@aa.com"
-            toEmails=["b@bb.com"]
-            ccEmails=[] 
-            bccEmails =[]
-            body="..."
+    let email = { 
+            id        = Guid.Empty
+            subject   = "" 
+            from      = "a@aa.com" 
+            toEmails  = [ "b@bb.com" ] 
+            ccEmails  = [ ] 
+            bccEmails = [ ] 
+            body      = "..." 
         }
+    let event = SubjectWasUpdated (Guid.Empty, "New Subject")
+    let expected = { email with subject = "New Subject" }
+    let actual = update email event request 
+    actual |> should equal (Some expected)
 
 

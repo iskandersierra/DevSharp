@@ -7,13 +7,13 @@ open Samples.Email.Logic
 
 type Instance =
     {
-        id: Guid;
-        subject: EmailSubject;
-        from: FromEmail;
-        toEmails: ToEmails;
-        ccEmails: CcEmails;
-        bccEmails:BccEmails;
-        body:EmailBody;
+        id:        Guid;
+        subject:   EmailSubject;
+        from:      FromEmail;
+        toEmails:  ToEmails;
+        ccEmails:  CcEmails;
+        bccEmails: BccEmails;
+        body:      EmailBody;
     }
 
 let selectId (event: Event) (request: Request) : string option =

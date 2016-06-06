@@ -55,6 +55,7 @@
     <Compile Include="EmailProjectionTest.fs" />
     <None Include="Script.fsx" />
     <Content Include="packages.config" />
+    <Content Include="App.config" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="FSharp.Core">
