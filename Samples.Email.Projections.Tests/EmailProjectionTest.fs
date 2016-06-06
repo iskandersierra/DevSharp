@@ -20,6 +20,26 @@ let ``EmailProjection fullname should be Samples.EmailProjection`` () =
     |> should equal "Samples.EmailProjection"
 
 [<Test>]
-let ``Update subject show produce the same email with the new subject`` () =
-    update { id=Guid.Empty; subject=""; from="a@aa.com"; toEmails=["b@bb.com"]; ccEmails=[]; bccEmails =[]; body="..."; } (SubjectWasUpdated (Guid.Empty, "New Subject")) (Request(Unchecked.defaultof<Map<string,obj>>)) 
-    |> should equal { id=Guid.Empty; subject="New Subject"; body="..."; from="a@aa.com"; toEmails=["b@bb.com"]; ccEmails=[]; bccEmails =[]}
+let ``Update subject should produce the same email with the new subject`` () =
+    update 
+        { 
+            id=Guid.Empty
+            subject="" 
+            from="a@aa.com" 
+            toEmails=["b@bb.com"] 
+            ccEmails=[] 
+            bccEmails =[] 
+            body="..." 
+        } (SubjectWasUpdated (Guid.Empty, "New Subject")) (Request(Unchecked.defaultof<Map<string,obj>>)) 
+    |> should equal 
+        { 
+            id=Guid.Empty
+            subject="New Subject"
+            from="a@aa.com"
+            toEmails=["b@bb.com"]
+            ccEmails=[] 
+            bccEmails =[]
+            body="..."
+        }
+
+
