@@ -61,3 +61,4 @@ let ``Counter acting on Increment command over initial state gives WasIncremente
 let ``Counter acting on Decrement command over initial state gives WasDecremented`` () =
     act Decrement
     |> should equal [ WasDecremented ]
+
