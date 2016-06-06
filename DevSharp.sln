@@ -23,12 +23,6 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "DevSharp.Domains.Core", "De
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "Samples", "{2B24CB07-6193-49ED-BF06-7CDE6C5F3D34}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Email", "Email", "{7062DD6C-ADBC-4916-902D-7B06F63D5C4C}"
-EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Samples.Email.Projections", "Samples.Email.Projections\Samples.Email.Projections.fsproj", "{BDD385FB-56B0-4538-A731-6ED413D8FB38}"
-EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Samples.Email.Projections.Tests", "Samples.Email.Projections.Tests\Samples.Email.Projections.Tests.fsproj", "{A8FDB044-2144-49E8-8276-36A131AAAC95}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -71,14 +65,6 @@ Global
 		{7DD11CB4-43CC-44E0-9B16-337E01B9959B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7DD11CB4-43CC-44E0-9B16-337E01B9959B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7DD11CB4-43CC-44E0-9B16-337E01B9959B}.Release|Any CPU.Build.0 = Release|Any CPU
-		{BDD385FB-56B0-4538-A731-6ED413D8FB38}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{BDD385FB-56B0-4538-A731-6ED413D8FB38}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{BDD385FB-56B0-4538-A731-6ED413D8FB38}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{BDD385FB-56B0-4538-A731-6ED413D8FB38}.Release|Any CPU.Build.0 = Release|Any CPU
-		{A8FDB044-2144-49E8-8276-36A131AAAC95}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{A8FDB044-2144-49E8-8276-36A131AAAC95}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{A8FDB044-2144-49E8-8276-36A131AAAC95}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{A8FDB044-2144-49E8-8276-36A131AAAC95}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -86,8 +72,5 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{905E7B58-263A-4A93-9073-3805185CD49D} = {2B24CB07-6193-49ED-BF06-7CDE6C5F3D34}
 		{9C2CC7C0-146F-45E3-9066-4D989F091D23} = {2B24CB07-6193-49ED-BF06-7CDE6C5F3D34}
-		{7062DD6C-ADBC-4916-902D-7B06F63D5C4C} = {2B24CB07-6193-49ED-BF06-7CDE6C5F3D34}
-		{BDD385FB-56B0-4538-A731-6ED413D8FB38} = {7062DD6C-ADBC-4916-902D-7B06F63D5C4C}
-		{A8FDB044-2144-49E8-8276-36A131AAAC95} = {7062DD6C-ADBC-4916-902D-7B06F63D5C4C}
 	EndGlobalSection
 EndGlobal
