@@ -1,16 +1,11 @@
 ﻿module DevSharp.Domain.Aggregates.AggregateBehavior
 
 open System
+open DevSharp
 open DevSharp.Messaging
 open DevSharp.Validations
 open DevSharp.Validations.ValidationUtils
 
-
-type AggregateId      = string // guid
-type AggregateVersion = int
-type CommandType      = obj
-type EventType        = obj
-type StateType        = obj
 
 type InputMessage =
 | LoadState         of StateType * AggregateVersion

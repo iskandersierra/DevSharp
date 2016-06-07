@@ -1,5 +1,5 @@
 // http://www.fssnip.net/1t
-module Dict
+module DevSharp.Dict
 
 open System.Collections.Generic
 
