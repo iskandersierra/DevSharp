@@ -1,7 +1,7 @@
 ﻿[<DevSharp.Annotations.InstanceProjectionModule>]
 module Samples.Domains.TodoListListProjection
 
-open DevSharp.Messaging
+open DevSharp
 open Samples.Domains.TodoList
 
 
@@ -12,7 +12,7 @@ type Instance =
     }
 
 let selectId (event: Event) (request: CommandRequest) : string option =
-    request.aggregateId
+    Some request.aggregate.aggregateId
 
 let create (id: string) (event: Event) (request: CommandRequest) : Instance option =
     match event with 

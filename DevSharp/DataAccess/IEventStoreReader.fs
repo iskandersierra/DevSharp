@@ -2,21 +2,25 @@
 
 open System
 open DevSharp
-open DevSharp.Messaging
 
 type EventStoreCommit = 
-| OnSnapshotCommit of StateType * AggregateVersion * CommandRequest
-| OnEventsCommit of EventType list * CommandRequest
-| OnCommitsDone
-| OnErrorReadingCommits of Exception
-
+| OnSnapshotCommit of AggregateSnapshotCommit
+| OnEventsCommit of AggregateEventsCommit
+and AggregateSnapshotCommit =
+    {
+        state: StateType
+        version: AggregateVersion
+        lastRequest: CommandRequest
+    }
+and AggregateEventsCommit =
+    {
+        events: EventType list
+        firstVersion: AggregateVersion
+        request: CommandRequest
+    }
 
 [< AbstractClass; Sealed >]
-type IEventStoreReader = 
-    abstract member Open: unit -> IObservable<EventStoreCommit>
+type IEventStoreReader =
+    abstract member CreateReader : CommandRequest -> IObservable<EventStoreCommit>
 
-
-[< AbstractClass; Sealed >]
-type IEventStoreReaderFactory =
-    abstract member CreateReader : CommandRequest -> IEventStoreReader
 

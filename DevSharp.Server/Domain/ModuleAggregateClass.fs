@@ -4,7 +4,7 @@ open System
 open System.Linq.Expressions
 open FSharp.Core
 open FSharp.Collections
-open DevSharp.Messaging
+open DevSharp
 open DevSharp.Annotations
 open DevSharp.Validations
 open DevSharp.Validations.ValidationUtils
@@ -165,42 +165,26 @@ type ModuleAggregateClass (aggregateModule: Type) =
         validateRequiresRequest || actRequiresRequest || applyRequireRequest
 
     
-    member this.init =
-        initValue
+    member this.init = initValue
 
-    member this.isStateless = 
-        isStatelessValue
+    member this.isStateless = isStatelessValue
 
-    member this.requiresRequest = 
-        requiresRequestValue
+    member this.className = aggregateFullName
 
     member this.validate command request =
-        let items = validateInvoker (command, request)
-        validationResult items
+        validationResult 
+        <| validateInvoker (command, request)
 
-    member this.act command state request =
-        actInvoker(command, state, request)
+    member this.act command state request = actInvoker(command, state, request)
 
-    member this.apply event state request =
-        applyInvoker(event, state, request)
+    member this.apply event state request = applyInvoker(event, state, request)
 
     override this.ToString() = sprintf "Aggregate class %s" aggregateFullName
 
     interface IAggregateClass with
-        member this.init =
-            this.init
-
-        member this.isStateless = 
-            this.isStateless
-
-        member this.requiresRequest = 
-            this.requiresRequest
-
-        member this.validate command request =
-            this.validate command request
-
-        member this.act command state request =
-            this.act command state request
-
-        member this.apply event state request =
-            this.apply event state request
+        member this.init                      = this.init
+        member this.isStateless               = this.isStateless
+        member this.className                 = this.className
+        member this.validate command request  = this.validate command request
+        member this.act command state request = this.act command state request
+        member this.apply event state request = this.apply event state request

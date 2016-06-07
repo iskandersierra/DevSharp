@@ -1,7 +1,7 @@
 ﻿namespace DevSharp.Domain.Aggregates
 
 open FSharp.Core
-open DevSharp.Messaging
+open DevSharp
 open DevSharp.Validations
 
 type CommandType = obj
@@ -14,7 +14,7 @@ type IAggregateClass =
     abstract member init: StateType
     abstract member isStateless: bool
 
-    abstract member requiresRequest: bool
+    abstract member className: string
 
     abstract member validate: CommandType -> CommandRequest -> ValidationResult
 

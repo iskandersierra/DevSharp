@@ -2,7 +2,6 @@
 
 open System
 open DevSharp
-open DevSharp.Messaging
 open DevSharp.Validations
 open DevSharp.Validations.ValidationUtils
 

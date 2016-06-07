@@ -4,7 +4,7 @@ open NUnit.Framework
 open System
 open FsUnit
 open DevSharp.Annotations
-open DevSharp.Messaging
+open DevSharp
 open DevSharp.Validations.ValidationUtils
 open DevSharp.Domain.Aggregates
 open DevSharp.Domain.Aggregates.AggregateBehavior
@@ -17,9 +17,24 @@ open NUnit.Framework.Constraints
     
 
 
+let properties = 
+    Map.empty
+        .Add(AggregateIdConstant,      "my aggregate id" :> obj)
+        .Add(AggregateVersionConstant, 12345 :> obj)
+        .Add(ApplicationIdConstant,    "my application id" :> obj)
+        .Add(AggregateTypeConstant,    "my aggregate type" :> obj)
+        .Add(ProjectIdConstant,        "my project id" :> obj)
+        .Add(CommandIdConstant,        "my command id" :> obj)
+        .Add(CommandTypeConstant,      "my command type" :> obj)
+        .Add(SessionIdConstant,        "my session id" :> obj)
+        .Add(TenantIdConstant,         "my tenant id" :> obj)
+        .Add(UserIdConstant,           "my user id" :> obj)
+        .Add(ClientDateConstant,       RequestDate.Now :> obj)
+        .Add(ApiDateConstant,          RequestDate.Now :> obj)
+        .Add(ProcessDateConstant,      RequestDate.Now :> obj)
 let aggregateModuleType = typedefof<TestingCommand>.DeclaringType
 let mutable aggregateClass = NopAggregateClass() :> IAggregateClass
-let request = CommandRequest(new Map<string, obj>(seq []))
+let request = (toCommandRequest properties).Value
 let aggregateId = "123456";
 let initBehavior () = init aggregateClass aggregateId
 

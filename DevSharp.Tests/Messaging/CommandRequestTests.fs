@@ -1,12 +1,14 @@
 ﻿module ``Command request tests``
 
 open NUnit.Framework
+open System
 open FsUnit
 open DevSharp
-open DevSharp.Messaging
 open NUnit.Framework.Constraints
 
-
+let date1 = RequestDate.Now
+let date2 = date1.AddMinutes(1.) 
+let date3 = date1.AddMinutes(2.) 
 
 [<SetUp>]
 let testSetup () =
@@ -14,61 +16,44 @@ let testSetup () =
 
 
 [<Test>]
-let ``An empty command request should have all its parameters as None`` () =
+let ``An empty command request should be equal to None`` () =
     let properties = Map.empty
 
-    let onFound x = true
-    let onNotFound () = false
-
-    let request = CommandRequest properties
-    request |> should not' (be Null)
-    request.properties       |> should equal properties
-    request.aggregateId      |> should equal None
-    request.aggregateVersion |> should equal None
-    request.applicationId    |> should equal None
-    request.projectId        |> should equal None
-    request.sessionId        |> should equal None
-    request.tenantId         |> should equal None
-    request.userId           |> should equal None
-
-    request.getAggregateId      onFound onNotFound |> should equal false
-    request.getAggregateVersion onFound onNotFound |> should equal false
-    request.getApplicationId    onFound onNotFound |> should equal false
-    request.getProjectId        onFound onNotFound |> should equal false
-    request.getSessionId        onFound onNotFound |> should equal false
-    request.getTenantId         onFound onNotFound |> should equal false
-    request.getUserId           onFound onNotFound |> should equal false
+    let request = toCommandRequest properties
+    request |> should equal None
 
 [<Test>]
-let ``An fully loaded command request should have all its parameters as Some value`` () =
+let ``A fully loaded command request should have all its parameters as Some value`` () =
     let properties = 
         Map.empty
             .Add(AggregateIdConstant,      "my aggregate id" :> obj)
             .Add(AggregateVersionConstant, 12345 :> obj)
             .Add(ApplicationIdConstant,    "my application id" :> obj)
+            .Add(AggregateTypeConstant,    "my aggregate type" :> obj)
             .Add(ProjectIdConstant,        "my project id" :> obj)
+            .Add(CommandIdConstant,        "my command id" :> obj)
+            .Add(CommandTypeConstant,      "my command type" :> obj)
             .Add(SessionIdConstant,        "my session id" :> obj)
             .Add(TenantIdConstant,         "my tenant id" :> obj)
             .Add(UserIdConstant,           "my user id" :> obj)
+            .Add(ClientDateConstant,       date1 :> obj)
+            .Add(ApiDateConstant,          date2 :> obj)
+            .Add(ProcessDateConstant,      date3 :> obj)
 
-    let onFound x = true
-    let onNotFound () = false
-
-    let request = CommandRequest properties
+    let request = toCommandRequest properties
     request |> should not' (be Null)
-    request.properties       |> should equal properties
-    request.aggregateId      |> should equal (Some "my aggregate id")
-    request.aggregateVersion |> should equal (Some 12345)
-    request.applicationId    |> should equal (Some "my application id")
-    request.projectId        |> should equal (Some "my project id")
-    request.sessionId        |> should equal (Some "my session id")
-    request.tenantId         |> should equal (Some "my tenant id")
-    request.userId           |> should equal (Some "my user id")
-
-    request.getAggregateId      onFound onNotFound |> should equal true
-    request.getAggregateVersion onFound onNotFound |> should equal true
-    request.getApplicationId    onFound onNotFound |> should equal true
-    request.getProjectId        onFound onNotFound |> should equal true
-    request.getSessionId        onFound onNotFound |> should equal true
-    request.getTenantId         onFound onNotFound |> should equal true
-    request.getUserId           onFound onNotFound |> should equal true
+    match request with
+    | Some req ->
+        req.aggregateVersion |> should equal 12345
+        req.commandId |> should equal "my command id"
+        req.processDate |> should equal date3
+        req.commandId |> should equal "my command id"
+        req.commandType |> should equal "my command type"
+        req.aggregate.aggregateId |> should equal "my aggregate id"
+        req.aggregate.aggregateType |> should equal "my aggregate type"
+        req.aggregate.request.properties |> should equal properties
+        req.aggregate.request.sessionId |> should equal "my session id"
+        req.aggregate.request.tenantId |> should equal "my tenant id"
+        req.aggregate.request.userId |> should equal "my user id"
+        req.aggregate.request.clientDate |> should equal date1
+        req.aggregate.request.apiDate |> should equal date2

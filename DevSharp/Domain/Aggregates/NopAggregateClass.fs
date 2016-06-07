@@ -9,9 +9,9 @@ type NopAggregateClass() =
 
         member this.init = null
         member this.isStateless = true
-        
-        member this.requiresRequest = false
 
+        member this.className = "NopClass"
+        
         member this.validate command request = validationResult []
 
         member this.act command state request = None

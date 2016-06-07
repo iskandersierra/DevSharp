@@ -55,7 +55,6 @@
     <Compile Include="Validations\ValidationResult.fs" />
     <Compile Include="Validations\ValidationUtils.fs" />
     <Compile Include="Serialization\SModels\SModels.fs" />
-    <Compile Include="Messaging\CommandRequest.fs" />
     <Compile Include="Domain\Aggregates\IAggregateClass.fs" />
     <Compile Include="Domain\Aggregates\NopAggregateClass.fs" />
     <Compile Include="Domain\Aggregates\AggregateBehavior.fs" />

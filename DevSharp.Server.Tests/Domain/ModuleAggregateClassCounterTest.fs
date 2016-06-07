@@ -2,7 +2,7 @@ module DevSharp.Server.Domain.Tests.ModuleAggregateClassCounterTest
 
 open NUnit.Framework
 open FsUnit
-open DevSharp.Messaging
+open DevSharp
 open DevSharp.Domain.Aggregates
 open DevSharp.Server.Domain
 open Samples.Domains.Counter
@@ -10,9 +10,24 @@ open NUnit.Framework.Constraints
 open DevSharp.Server.ReflectionUtils
 
 
+let properties = 
+    Map.empty
+        .Add(AggregateIdConstant,      "my aggregate id" :> obj)
+        .Add(AggregateVersionConstant, 12345 :> obj)
+        .Add(ApplicationIdConstant,    "my application id" :> obj)
+        .Add(AggregateTypeConstant,    "my aggregate type" :> obj)
+        .Add(ProjectIdConstant,        "my project id" :> obj)
+        .Add(CommandIdConstant,        "my command id" :> obj)
+        .Add(CommandTypeConstant,      "my command type" :> obj)
+        .Add(SessionIdConstant,        "my session id" :> obj)
+        .Add(TenantIdConstant,         "my tenant id" :> obj)
+        .Add(UserIdConstant,           "my user id" :> obj)
+        .Add(ClientDateConstant,       RequestDate.Now :> obj)
+        .Add(ApiDateConstant,          RequestDate.Now :> obj)
+        .Add(ProcessDateConstant,      RequestDate.Now :> obj)
 let aggregateModuleType = typedefof<Command>.DeclaringType
 let mutable aggregateClass = NopAggregateClass() :> IAggregateClass
-let request = CommandRequest(new Map<string, obj>(seq []))
+let request = (toCommandRequest properties).Value
 let message = "Helloooo!"
 
 [<SetUp>]
@@ -24,6 +39,11 @@ let testSetup () =
 let ``loading a ModuleAggregateClass with Counter aggregate module definition do not fail`` () =
     aggregateClass 
     |> should not' (be Null)
+
+[<Test>] 
+let ``a class name of a Counter ModuleAggregateClass should be Samples.Domains.Counter`` () =
+    aggregateClass.className
+    |> should equal "Samples.Domains.Counter"
 
 [<Test>] 
 let ``validating a Increment command should give a valid result`` () =
