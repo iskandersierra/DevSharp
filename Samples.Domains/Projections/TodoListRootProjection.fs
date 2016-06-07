@@ -19,7 +19,7 @@ and  TodoTask =
     }
 
 let selectId (event: Event) (request: CommandRequest) : string option =
-    request.instanceId
+    request.aggregateId
 
 let create (id: string) (event: Event) (request: CommandRequest) : Instance option =
     match event with 

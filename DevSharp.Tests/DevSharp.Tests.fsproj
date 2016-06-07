@@ -60,6 +60,7 @@
     <Compile Include="Domain\Aggregates\AggregateBehaviorTests.fs" />
     <Compile Include="Serialization\CoreSerializationTests.fs" />
     <Content Include="App.config" />
+    <Compile Include="Messaging\CommandRequestTests.fs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="FsCheck">
