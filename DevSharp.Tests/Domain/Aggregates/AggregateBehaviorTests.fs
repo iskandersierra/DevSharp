@@ -19,7 +19,7 @@ open NUnit.Framework.Constraints
 
 let aggregateModuleType = typedefof<TestingCommand>.DeclaringType
 let mutable aggregateClass = NopAggregateClass() :> IAggregateClass
-let request = Request(new Map<string, obj>(seq []))
+let request = CommandRequest(new Map<string, obj>(seq []))
 let aggregateId = "123456";
 let initBehavior () = init aggregateClass aggregateId
 

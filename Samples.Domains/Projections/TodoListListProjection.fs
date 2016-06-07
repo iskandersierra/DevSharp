@@ -11,15 +11,15 @@ type Instance =
         title: TodoListTitle;
     }
 
-let selectId (event: Event) (request: Request) : string option =
+let selectId (event: Event) (request: CommandRequest) : string option =
     request.instanceId
 
-let create (id: string) (event: Event) (request: Request) : Instance option =
+let create (id: string) (event: Event) (request: CommandRequest) : Instance option =
     match event with 
     | WasCreated title -> Some { id = id; title = title; }
     | _ -> None // do not create the instance
 
-let update (instance: Instance) (event: Event) (request: Request) : Instance option =
+let update (instance: Instance) (event: Event) (request: CommandRequest) : Instance option =
     match event with 
     | TitleWasUpdated title -> Some { instance with title = title; }
     // | WasDeleted -> None

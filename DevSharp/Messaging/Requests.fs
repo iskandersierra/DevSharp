@@ -3,7 +3,7 @@ namespace DevSharp.Messaging
 open System
 
 
-type Request (properties: Map<string, obj>) =
+type CommandRequest (properties: Map<string, obj>) =
     
     let getProperty key =
         match Map.tryFind key properties with

@@ -12,7 +12,7 @@ open DevSharp.Server.ReflectionUtils
 
 let aggregateModuleType = typedefof<Command>.DeclaringType
 let mutable aggregateClass = NopAggregateClass() :> IAggregateClass
-let request = Request(new Map<string, obj>(seq []))
+let request = CommandRequest(new Map<string, obj>(seq []))
 let message = "Helloooo!"
 
 [<SetUp>]

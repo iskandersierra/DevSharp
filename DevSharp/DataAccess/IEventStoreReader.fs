@@ -5,8 +5,8 @@ open DevSharp
 open DevSharp.Messaging
 
 type EventStoreCommit = 
-| OnSnapshotCommit of StateType * AggregateVersion * Request
-| OnEventsCommit of EventType list * Request
+| OnSnapshotCommit of StateType * AggregateVersion * CommandRequest
+| OnEventsCommit of EventType list * CommandRequest
 | OnCommitsDone
 | OnErrorReadingCommits of Exception
 
@@ -18,5 +18,5 @@ type IEventStoreReader =
 
 [< AbstractClass; Sealed >]
 type IEventStoreReaderFactory =
-    abstract member CreateReader : Request -> IEventStoreReader
+    abstract member CreateReader : CommandRequest -> IEventStoreReader
 

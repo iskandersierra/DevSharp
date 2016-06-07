@@ -12,9 +12,9 @@ open DevSharp.Domain.Aggregates
 open DevSharp.Server
 open DevSharp.Server.ReflectionUtils
 
-type validateDelegate = Func<obj, Request, ValidationItem seq>
-type actDelegate = Func<obj, obj, Request, obj seq option>
-type applyDelegate = Func<obj, obj, Request, obj>
+type validateDelegate = Func<obj, CommandRequest, ValidationItem seq>
+type actDelegate = Func<obj, obj, CommandRequest, obj seq option>
+type applyDelegate = Func<obj, obj, CommandRequest, obj>
 
 type ModuleAggregateClass (aggregateModule: Type) =
     
@@ -26,7 +26,7 @@ type ModuleAggregateClass (aggregateModule: Type) =
 
     let containerName = sprintf "aggregate %O" aggregateFullName
 
-    let requestType = typedefof<Request>
+    let requestType = typedefof<CommandRequest>
 
     let (initValue, isStatelessValue, stateType) =
         let property =

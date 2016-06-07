@@ -9,9 +9,9 @@ type EventType   = obj
 
 type IInstanceProjection =
 
-    abstract member selectId: EventType -> Request -> string option
+    abstract member selectId: EventType -> CommandRequest -> string option
 
-    abstract member create: string -> EventType -> Request -> Map<string, obj> option
+    abstract member create: string -> EventType -> CommandRequest -> Map<string, obj> option
 
-    abstract member update: Map<string, obj> -> EventType -> Request -> Map<string, obj> option
+    abstract member update: Map<string, obj> -> EventType -> CommandRequest -> Map<string, obj> option
 
