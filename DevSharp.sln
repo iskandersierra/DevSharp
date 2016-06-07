@@ -17,8 +17,6 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "DevSharp.Server.Tests", "De
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "DevSharp.Tests", "DevSharp.Tests\DevSharp.Tests.fsproj", "{B94F7030-A921-4191-BC76-37C73F4C7F5C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevSharp.TestWeb", "DevSharp.TestWeb\DevSharp.TestWeb.csproj", "{77378458-919D-4163-BE93-0D532E9DFFBE}"
-EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "DevSharp.Domains.Core", "DevSharp.Domains.Core\DevSharp.Domains.Core.fsproj", "{7DD11CB4-43CC-44E0-9B16-337E01B9959B}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "Samples", "{2B24CB07-6193-49ED-BF06-7CDE6C5F3D34}"
@@ -60,10 +58,6 @@ Global
 		{B94F7030-A921-4191-BC76-37C73F4C7F5C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B94F7030-A921-4191-BC76-37C73F4C7F5C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B94F7030-A921-4191-BC76-37C73F4C7F5C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{77378458-919D-4163-BE93-0D532E9DFFBE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{77378458-919D-4163-BE93-0D532E9DFFBE}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{77378458-919D-4163-BE93-0D532E9DFFBE}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{77378458-919D-4163-BE93-0D532E9DFFBE}.Release|Any CPU.Build.0 = Release|Any CPU
 		{7DD11CB4-43CC-44E0-9B16-337E01B9959B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{7DD11CB4-43CC-44E0-9B16-337E01B9959B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7DD11CB4-43CC-44E0-9B16-337E01B9959B}.Release|Any CPU.ActiveCfg = Release|Any CPU
