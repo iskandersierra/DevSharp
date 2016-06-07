@@ -13,6 +13,7 @@ type EventType        = obj
 type StateType        = obj
 
 type InputMessage =
+| LoadState         of StateType * AggregateVersion
 | LoadEvent         of EventType
 | LoadError         of Exception
 | LoadDone
@@ -126,6 +127,11 @@ let actOnCommand bahavior state command request =
 
 let receiveWhileLoading behavior message request =
     match message with
+    | LoadState (state, version) ->
+        if behavior.version = 0 
+        then receiveResult MessageAccepted { behavior with state = state; version = version }
+        else receiveResult MessageRejected behavior
+
     | LoadEvent event -> 
         match applyEvent behavior event request with
         | EventWasApplied newState -> 

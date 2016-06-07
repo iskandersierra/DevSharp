@@ -53,6 +53,7 @@
     <Compile Include="Annotations\InstanceProjectionModuleAttribute.fs" />
     <Compile Include="Validations\ValidationResult.fs" />
     <Compile Include="Validations\ValidationUtils.fs" />
+    <Compile Include="Serialization\SModels\SModels.fs" />
     <Compile Include="Messaging\Requests.fs" />
     <Compile Include="Domain\Aggregates\IAggregateClass.fs" />
     <Compile Include="Domain\Aggregates\NopAggregateClass.fs" />
@@ -60,7 +61,6 @@
     <Compile Include="Domain\InstanceProjections\IInstanceProjection.fs" />
     <None Include="Script.fsx" />
     <Content Include="packages.config" />
-    <Compile Include="Serialization\SModels\SModels.fs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="FSharp.Core">

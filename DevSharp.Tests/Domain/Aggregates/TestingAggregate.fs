@@ -21,8 +21,8 @@ type TestingCommand =
 
 type TestingState = 
     { 
-        incCount: int; 
-        decCount: int; 
+        incCount: int
+        decCount: int
     }
 
 [<AggregateInit>]
@@ -40,8 +40,8 @@ let testingAct command =
 [<AggregateApply>]
 let testingApply event state = 
     match event with
-    | Incremented -> { state with incCount = state.incCount + 1; }
-    | Decremented -> { state with decCount = state.decCount + 1; }
+    | Incremented -> { state with incCount = state.incCount + 1 }
+    | Decremented -> { state with decCount = state.decCount + 1 }
     | FailingEvent -> raise (InvalidOperationException "Failing event")
 
 [<AggregateValidate>]
