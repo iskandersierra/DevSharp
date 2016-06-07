@@ -21,6 +21,9 @@ and AggregateEventsCommit =
 
 [< AbstractClass; Sealed >]
 type IEventStoreReader =
-    abstract member CreateReader : CommandRequest -> IObservable<EventStoreCommit>
+    abstract member ReadCommits : IObserver<EventStoreCommit> -> AggregateRequest -> unit
 
 
+[< AbstractClass; Sealed >]
+type IEventStoreWriter =
+    abstract member WriteCommits : (unit -> 'a) -> (Exception -> 'a) -> CommandRequest -> EventType list -> StateType option -> 'a

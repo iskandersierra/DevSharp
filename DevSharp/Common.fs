@@ -121,5 +121,6 @@ let toCommandRequest (properties: PropertiesType) : CommandRequest option =
             commandType = ctp
             processDate = pdt
         }
-    | _ -> None
+    | _ -> 
+        None
 
