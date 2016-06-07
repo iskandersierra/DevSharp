@@ -73,18 +73,18 @@ let ``TodoList Command should be defined as expected`` () =
 
 // Runtime
 
-let initTitle = TodoListTitle "TodoList initial title"
-let title = TodoListTitle "TodoList new title"
-let initText = TaskText "Task new text"
-let newText = TaskText "Task other text"
-let taskText str = TaskText str
+let initTitle = "TodoList initial title"
+let title = "TodoList new title"
+let initText = "Task new text"
+let newText = "Task other text"
+let taskText str = str
 
 let createdState()   = applyEvents2 init apply [ WasCreated initTitle ]
-let oneTaskState()   = applyEvents2 (createdState()) apply [ TaskWasAdded (TaskId 1, TaskText "task #1") ]
-let twoTaskState()   = applyEvents2 (oneTaskState()) apply [ TaskWasAdded (TaskId 2, TaskText "task #2") ]
-let threeTaskState() = applyEvents2 (twoTaskState()) apply [ TaskWasAdded (TaskId 3, TaskText "task #3") ]
-let threeTaskTwoCheckedState() = applyEvents2 (threeTaskState()) apply [ TaskWasChecked <| TaskId 1; TaskWasChecked <| TaskId 3; ]
-let threeTaskAllCheckedState() = applyEvents2 (threeTaskTwoCheckedState()) apply [ TaskWasChecked <| TaskId 2; ]
+let oneTaskState()   = applyEvents2 (createdState()) apply [ TaskWasAdded (1, "task #1") ]
+let twoTaskState()   = applyEvents2 (oneTaskState()) apply [ TaskWasAdded (2, "task #2") ]
+let threeTaskState() = applyEvents2 (twoTaskState()) apply [ TaskWasAdded (3, "task #3") ]
+let threeTaskTwoCheckedState() = applyEvents2 (threeTaskState()) apply [ TaskWasChecked 1; TaskWasChecked 3; ]
+let threeTaskAllCheckedState() = applyEvents2 (threeTaskTwoCheckedState()) apply [ TaskWasChecked 2; ]
 
 
 [<Test>]
@@ -125,77 +125,77 @@ let ``TodoList acting with AddTask command over initial state should return None
 [<Test>]
 let ``TodoList acting with AddTask command with initText over some state should give TaskWasAdded with the same initText`` () =
     act (AddTask initText) (createdState())
-    |> should equal (Some [ TaskWasAdded (TaskId 1, initText) ])
+    |> should equal (Some [ TaskWasAdded (1, initText) ])
 
 [<Test>]
 let ``TodoList acting with UpdateTask command over initial state should return None`` () =
-    act (UpdateTask (TaskId 1, initText)) init 
+    act (UpdateTask (1, initText)) init 
     |> should be Null
 
 [<Test>]
 let ``TodoList acting with UpdateTask command with initTitle over some state should give no events`` () =
-    act (UpdateTask (TaskId 1, initText)) (createdState())
+    act (UpdateTask (1, initText)) (createdState())
     |> should equal (Some List.empty<Event>)
 
 [<Test>]
 let ``TodoList acting with UpdateTask command with title over some state should give TaskWasUpdated with the same title`` () =
-    act (UpdateTask (TaskId 1, initText)) (twoTaskState())
-    |> should equal (Some [ TaskWasUpdated (TaskId 1, initText) ])
+    act (UpdateTask (1, initText)) (twoTaskState())
+    |> should equal (Some [ TaskWasUpdated (1, initText) ])
 
 [<Test>]
 let ``TodoList acting with RemoveTask command over initial state should return None`` () =
-    act (RemoveTask <| TaskId 1) init
+    act (RemoveTask 1) init
     |> should be Null
 
 [<Test>]
 let ``TodoList acting with RemoveTask command with initTitle over some state should give no events`` () =
-    act (RemoveTask <| TaskId 1) (createdState())
+    act (RemoveTask 1) (createdState())
     |> should equal (Some List.empty<Event>)
 
 [<Test>]
 let ``TodoList acting with RemoveTask command with title over some state should give TaskWasRemoved with the same title`` () =
-    act (RemoveTask <| TaskId 1) (twoTaskState())
-    |> should equal (Some [ TaskWasRemoved <| TaskId 1 ])
+    act (RemoveTask 1) (twoTaskState())
+    |> should equal (Some [ TaskWasRemoved 1 ])
 
 [<Test>]
 let ``TodoList acting with CheckTask command over initial state should return None`` () =
-    act (CheckTask <| TaskId 1) init 
+    act (CheckTask 1) init 
     |> should be Null
 
 [<Test>]
 let ``TodoList acting with CheckTask command with id over empty state should give no events`` () =
-    act (CheckTask <| TaskId 1) (createdState())
+    act (CheckTask 1) (createdState())
     |> should equal (Some List.empty<Event>)
 
 [<Test>]
 let ``TodoList acting with CheckTask command with id over checked task should give no events`` () =
-    act (CheckTask <| TaskId 1) (threeTaskTwoCheckedState())
+    act (CheckTask 1) (threeTaskTwoCheckedState())
     |> should equal (Some List.empty<Event>)
 
 [<Test>]
 let ``TodoList acting with CheckTask command with id over some state should give TaskWasChecked with the same id`` () =
-    act (CheckTask <| TaskId 1) (threeTaskState())
-    |> should equal (Some [ TaskWasChecked <| TaskId 1 ])
+    act (CheckTask 1) (threeTaskState())
+    |> should equal (Some [ TaskWasChecked 1 ])
 
 [<Test>]
 let ``TodoList acting with UncheckTask command over initial state should return None`` () =
-    act (UncheckTask <| TaskId 1) init 
+    act (UncheckTask 1) init 
     |> should be Null
 
 [<Test>]
 let ``TodoList acting with UncheckTask command with id over empty state should give no events`` () =
-    act (UncheckTask <| TaskId 1) (createdState())
+    act (UncheckTask 1) (createdState())
     |> should equal (Some List.empty<Event>)
 
 [<Test>]
 let ``TodoList acting with UncheckTask command with id over unchecked task should give no events`` () =
-    act (UncheckTask <| TaskId 1) (threeTaskState())
+    act (UncheckTask 1) (threeTaskState())
     |> should equal (Some List.empty<Event>)
 
 [<Test>]
 let ``TodoList acting with UncheckTask command with id over checked task should give TaskWasUnchecked with the same id`` () =
-    act (UncheckTask <| TaskId 1) (threeTaskTwoCheckedState())
-    |> should equal (Some [ TaskWasUnchecked <| TaskId 1 ])
+    act (UncheckTask 1) (threeTaskTwoCheckedState())
+    |> should equal (Some [ TaskWasUnchecked 1 ])
 
 [<Test>]
 let ``TodoList acting with RemoveAllTasks command over initial state should return None`` () =
@@ -210,7 +210,7 @@ let ``TodoList acting with RemoveAllTasks command over empty state should give n
 [<Test>]
 let ``TodoList acting with RemoveAllTasks command over some state should give various TaskWasRemoved events`` () =
     act RemoveAllTasks (threeTaskTwoCheckedState())
-    |> should equal (Some [ TaskWasRemoved <| TaskId 1; TaskWasRemoved <| TaskId 2; TaskWasRemoved <| TaskId 3; ])
+    |> should equal (Some [ TaskWasRemoved 1; TaskWasRemoved 2; TaskWasRemoved 3; ])
 
 [<Test>]
 let ``TodoList acting with RemoveAllCheckedTasks command over initial state should return None`` () =
@@ -230,7 +230,7 @@ let ``TodoList acting with RemoveAllCheckedTasks command over state with no chec
 [<Test>]
 let ``TodoList acting with RemoveAllCheckedTasks command over some state should give various TaskWasRemoved events`` () =
     act RemoveAllCheckedTasks (threeTaskTwoCheckedState())
-    |> should equal (Some [ TaskWasRemoved <| TaskId 1; TaskWasRemoved <| TaskId 3; ])
+    |> should equal (Some [ TaskWasRemoved 1; TaskWasRemoved 3; ])
 
 [<Test>]
 let ``TodoList acting with CheckAllTasks command over initial state should return None`` () =
@@ -250,7 +250,7 @@ let ``TodoList acting with CheckAllTasks command over state with no unchecked ta
 [<Test>]
 let ``TodoList acting with CheckAllTasks command over some state should give various TaskWasChecked events`` () =
     act CheckAllTasks (threeTaskTwoCheckedState())
-    |> should equal (Some [ TaskWasChecked <| TaskId 2; ])
+    |> should equal (Some [ TaskWasChecked 2; ])
 
 [<Test>]
 let ``TodoList acting with UncheckAllTasks command over initial state should return None`` () =
@@ -270,4 +270,4 @@ let ``TodoList acting with UncheckAllTasks command over state with no unchecked 
 [<Test>]
 let ``TodoList acting with UncheckAllTasks command over some state should give various TaskWasUnchecked events`` () =
     act UncheckAllTasks (threeTaskTwoCheckedState())
-    |> should equal (Some [ TaskWasUnchecked <| TaskId 1; TaskWasUnchecked <| TaskId 3; ])
+    |> should equal (Some [ TaskWasUnchecked 1; TaskWasUnchecked 3; ])

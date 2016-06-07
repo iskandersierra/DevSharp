@@ -10,8 +10,8 @@ open DevSharp.Server.ReflectionUtils
 open NUnit.Framework.Constraints
 
 
-let initTitle = TodoListTitle "TodoList initial title"
-let title = TodoListTitle "TodoList new title"
+let initTitle = "TodoList initial title"
+let title = "TodoList new title"
 
 let aggregateModuleType = typedefof<Command>.DeclaringType
 let mutable aggregateClass = NopAggregateClass() :> IAggregateClass

@@ -6,9 +6,9 @@ open DevSharp.Validations
 open DevSharp.Validations.ValidationUtils
 open DevSharp.Annotations
 
-type TodoListTitle          = TodoListTitle of string
-type TaskId                 = TaskId of int
-type TaskText               = TaskText of string
+type TodoListTitle          = string
+type TaskId                 = int
+type TaskText               = string
 
 type Event = 
 | WasCreated                of TodoListTitle
@@ -114,8 +114,7 @@ let act command state =
             None
 
 let getNextTaskId taskId =
-    match taskId with
-    | TaskId id -> TaskId (id + 1)
+    taskId + 1
 
 [<AggregateApply>]
 let apply event state =
@@ -123,7 +122,7 @@ let apply event state =
     | (None, WasCreated title) ->
         Some { 
             title = title
-            nextTaskId = TaskId 1
+            nextTaskId = 1
             tasks = []
         }
 
@@ -187,30 +186,24 @@ let apply event state =
 let validate command =
     let validateId taskId =
         seq {
-            match taskId with
-            | TaskId id ->
-                if id <= 0 
-                then yield memberFailure "id" "Id must be positive"
+            if taskId <= 0 
+            then yield memberFailure "id" "Id must be positive"
         }
 
     let validateTitle title =
         seq {
-            match title with
-            | TodoListTitle t ->
-                if String.IsNullOrEmpty t
-                then yield memberFailure "title" "Title cannot be empty"
-                else if t.Length < 4 || t.Length > 100 
-                    then yield memberFailure "title" "Title length must be between 4 and 100"
+            if String.IsNullOrEmpty title
+            then yield memberFailure "title" "Title cannot be empty"
+            else if title.Length < 4 || title.Length > 100 
+                then yield memberFailure "title" "Title length must be between 4 and 100"
         }
 
     let validateTaskText text =
         seq {
-            match text with
-            | TaskText t ->
-                if String.IsNullOrEmpty t 
-                then yield memberFailure "text" "Task text cannot be empty"
-                else if t.Length < 4 || t.Length > 100 
-                    then yield memberFailure "text" "Task text length must be between 4 and 100"
+            if String.IsNullOrEmpty text
+            then yield memberFailure "text" "Task text cannot be empty"
+            else if text.Length < 4 || text.Length > 100 
+                then yield memberFailure "text" "Task text length must be between 4 and 100"
         }
 
     in
