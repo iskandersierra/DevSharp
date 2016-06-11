@@ -56,12 +56,14 @@
     <Compile Include="Validations\ValidationUtils.fs" />
     <Compile Include="Serialization\SModels\SModels.fs" />
     <Compile Include="DataAccess\IEventStore.fs" />
+    <Compile Include="DataAccess\InMemoryEventStore.fs" />
     <Compile Include="Domain\Aggregates\IAggregateClass.fs" />
     <Compile Include="Domain\Aggregates\NopAggregateClass.fs" />
     <Compile Include="Domain\Aggregates\AggregateBehavior.fs" />
     <Compile Include="Domain\InstanceProjections\IInstanceProjection.fs" />
     <None Include="Script.fsx" />
     <Content Include="packages.config" />
+    <None Include="InMemoryEventStore" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="FSharp.Core">

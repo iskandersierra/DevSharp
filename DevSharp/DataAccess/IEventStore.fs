@@ -16,14 +16,13 @@ and AggregateEventsCommit =
     {
         events: EventType list
         firstVersion: AggregateVersion
+        lastVersion: AggregateVersion
         request: CommandRequest
     }
 
-[< AbstractClass; Sealed >]
 type IEventStoreReader =
     abstract member ReadCommits : IObserver<EventStoreCommit> -> AggregateRequest -> unit
 
 
-[< AbstractClass; Sealed >]
 type IEventStoreWriter =
-    abstract member WriteCommits : (unit -> 'a) -> (Exception -> 'a) -> CommandRequest -> EventType list -> StateType option -> 'a
+    abstract member WriteCommit : (unit -> 'a) -> (Exception -> 'a) -> CommandRequest -> EventType list -> StateType option -> AggregateVersion -> 'a
