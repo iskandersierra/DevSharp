@@ -22,3 +22,4 @@ type ValidationResult =
         isValid : bool;
     }
 
+exception ValidationException of ValidationResult
