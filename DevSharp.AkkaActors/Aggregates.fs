@@ -102,9 +102,9 @@ let inMemStore = InMemoryEventStore()
 
 let instance   = sys.ActorOf(Props.Create<InstanceActor>())
 
-let actorFunc  = instanceActorFactory inMemStore inMemStore (NopAggregateClass()) "1234"
+//let actorFunc  = instanceActorFactory inMemStore inMemStore (NopAggregateClass()) "1234"
 
-let actorRef   = spawn sys "instance" (actorOf2 actorFunc)
+//let actorRef   = spawn sys "instance" (actorOf2 actorFunc)
 
 do ()
 
