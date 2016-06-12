@@ -14,18 +14,6 @@ open DevSharp.Validations
 type InstanceActorMessage =
 | RequestMessage of input: InputMessage * req: CommandRequest
 
-let instanceActorFactory (reader: IEventStoreReader) (writer: IEventStoreWriter) aggregateClass aggregateId = 
-    let mutable state = init aggregateClass aggregateId
-
-    //reader.ReadCommits observer request
-
-    let handler (mailbox: Actor<InstanceActorMessage>) msg = 
-        mailbox.Self <! msg
-        ()
-
-    handler
-
-
 type InstanceActor(reader: IEventStoreReader, writer: IEventStoreWriter, request, aggregateClass, aggregateId) =
     inherit UntypedActor()
     let mutable behavior = init aggregateClass aggregateId
@@ -41,19 +29,17 @@ type InstanceActor(reader: IEventStoreReader, writer: IEventStoreWriter, request
         let observer = 
             { 
                 new IObserver<EventStoreCommit> with
-                    member obs.OnNext commit = 
-                        match commit with
-                        | OnSnapshotCommit data ->
-                            self <! RequestMessage (LoadState (data.state, data.version), data.lastRequest)
-                        | OnEventsCommit data ->
-                            data.events
-                            |> List.map ( fun e -> RequestMessage (LoadEvent e, data.request) ) 
-                            |> List.iter self.Tell
-                        ()
-                    member obs.OnError exn = 
-                        self <! RequestMessage (LoadError exn, request)
-                    member obs.OnCompleted () = 
-                        self <! RequestMessage (LoadDone, request)
+                member obs.OnNext commit = 
+                    match commit with
+                    | OnSnapshotCommit data ->
+                        do self <! RequestMessage (LoadState (data.state, data.version), data.lastRequest)
+                    | OnEventsCommit data ->
+                        do [for e in data.events -> RequestMessage (LoadEvent e, data.request)]
+                        |> List.iter self.Tell
+                member obs.OnError exn = 
+                    do self <! RequestMessage (LoadError exn, request)
+                member obs.OnCompleted () = 
+                    do self <! RequestMessage (LoadDone, request)
             }
 
         reader.ReadCommits observer request.aggregate
@@ -62,53 +48,52 @@ type InstanceActor(reader: IEventStoreReader, writer: IEventStoreWriter, request
     override this.OnReceive(msg: obj) =
         let self = this.Self
         let sender = this.Sender
-        match msg with
-        | :? InstanceActorMessage as message ->
-            match message with
-            | RequestMessage (input, request) ->
-                let (ReceiveResult (output, newBehavior)) = receive behavior input request
-                behavior <- newBehavior
+        do 
+            match msg with
+            | :? InstanceActorMessage as message ->
+                match message with
+                | RequestMessage (input, request) ->
+                    let (ReceiveResult (output, newBehavior)) = receive behavior input request
+                    do behavior <- newBehavior
 
-                match output with
-                | CommandDone ->
-                    sender <! Status.Success ()
+                    do
+                        match output with
+                        | CommandDone ->
+                            do sender <! Status.Success ()
 
-                | EventsEmitted events ->
-                    writer.WriteCommit
-                        (fun () -> self.Tell(RequestMessage (ApplyEvents events, request), sender))
-                        (fun exn -> sender <! Status.Failure exn )
-                        request
-                        events
-                        None
-                        newBehavior.version
+                        | EventsEmitted events ->
+                            let onCommitted () = self.Tell(RequestMessage (ApplyEvents events, request), sender)
+                            let onError exn = sender <! Status.Failure exn
+                            do writer.WriteCommit onCommitted onError request events None newBehavior.version
 
-                | PostponeMessage ->
-                    stash.Stash()
+                        | PostponeMessage ->
+                            do stash.Stash()
 
-                | InvalidCommand validation -> 
-                    sender <! Status.Failure (ValidationException validation)
+                        | InvalidCommand validation -> 
+                            do sender <! Status.Failure (ValidationException validation)
 
-                | ValidateFailed exn 
-                | ActFailed      exn 
-                | LoadingFailed  exn 
-                | ApplyFailed    exn ->
-                    sender <! Status.Failure exn
+                        | ValidateFailed exn 
+                        | ActFailed      exn 
+                        | LoadingFailed  exn 
+                        | ApplyFailed    exn ->
+                            do sender <! Status.Failure exn
 
-                | UnexpectedVersion ->
-                    sender <! Status.Failure (Exception())
+                        | UnexpectedVersion 
+                        | MessageRejected ->
+                            do sender <! Status.Failure (Exception())
 
-                | MessageRejected ->
-                    sender <! Status.Failure (Exception())
+                        | MessageAccepted -> 
+                            do ()
 
-                | MessageAccepted -> ()
+                do
+                    match behavior.mode with
+                    | Receiving -> 
+                        do stash.Unstash()
+                    | _ -> 
+                        do ()
 
-            match behavior.mode with
-            | Receiving -> 
-                stash.Unstash()
-            | _ -> ()
-
-        | _ -> 
-            this.Unhandled()
+            | _ -> 
+                do this.Unhandled()
 
 
 
@@ -121,7 +106,7 @@ let actorFunc  = instanceActorFactory inMemStore inMemStore (NopAggregateClass()
 
 let actorRef   = spawn sys "instance" (actorOf2 actorFunc)
 
-()
+do ()
 
 
 
