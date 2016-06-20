@@ -2,6 +2,7 @@
 
 open System
 open DevSharp
+open System.Threading.Tasks
 
 type EventStoreCommit = 
 | OnSnapshotCommit of AggregateSnapshotCommit
@@ -21,8 +22,20 @@ and AggregateEventsCommit =
     }
 
 type IEventStoreReader =
-    abstract member ReadCommits : IObserver<EventStoreCommit> -> AggregateRequest -> unit
+    abstract member ReadCommits<'a> : 
+        onNext: (EventStoreCommit -> unit) -> 
+        onCompleted: (unit -> 'a) -> 
+        onError: (Exception -> 'a) -> 
+        request: AggregateRequest -> 
+        Task<'a>
 
 
 type IEventStoreWriter =
-    abstract member WriteCommit : (unit -> 'a) -> (Exception -> 'a) -> CommandRequest -> EventType list -> StateType option -> AggregateVersion -> 'a
+    abstract member WriteCommit<'a> : 
+        onSuccess: (unit -> 'a) -> 
+        onError: (Exception -> 'a) -> 
+        request: CommandRequest -> 
+        events: EventType list -> 
+        state: StateType option -> 
+        version: AggregateVersion -> 
+        Task<'a>

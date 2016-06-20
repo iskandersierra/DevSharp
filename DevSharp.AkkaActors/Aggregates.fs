@@ -10,6 +10,7 @@ open DevSharp.Domain.Aggregates
 open DevSharp.Domain.Aggregates.AggregateBehavior
 open DevSharp.DataAccess
 open DevSharp.Validations
+open System.Threading.Tasks
 
 type InstanceActorMessage =
 | RequestMessage of input: InputMessage * req: CommandRequest
@@ -26,24 +27,21 @@ type InstanceActor(reader: IEventStoreReader, writer: IEventStoreWriter, request
 
     override this.PreStart() =
         let self = this.Self
-        let observer = 
-            { 
-                new IObserver<EventStoreCommit> with
-                member obs.OnNext commit = 
-                    match commit with
-                    | OnSnapshotCommit data ->
-                        do self <! RequestMessage (LoadState (data.state, data.version), data.lastRequest)
-                    | OnEventsCommit data ->
-                        do [for e in data.events -> RequestMessage (LoadEvent e, data.request)]
-                        |> List.iter self.Tell
-                member obs.OnError exn = 
-                    do self <! RequestMessage (LoadError exn, request)
-                member obs.OnCompleted () = 
-                    do self <! RequestMessage (LoadDone, request)
-            }
+        let onNext commit = 
+            match commit with
+            | OnSnapshotCommit data ->
+                do self <! RequestMessage (LoadState (data.state, data.version), data.lastRequest)
+            | OnEventsCommit data ->
+                do [for e in data.events -> RequestMessage (LoadEvent e, data.request)]
+                |> List.iter self.Tell
+        let onError exn = 
+            do self <! RequestMessage (LoadError exn, request)
+        let onCompleted () = 
+            do self <! RequestMessage (LoadDone, request)
 
-        reader.ReadCommits observer request.aggregate
-        ()
+        reader.ReadCommits onNext onCompleted onError request.aggregate
+        |> 
+        
 
     override this.OnReceive(msg: obj) =
         let self = this.Self
@@ -95,18 +93,18 @@ type InstanceActor(reader: IEventStoreReader, writer: IEventStoreWriter, request
             | _ -> 
                 do this.Unhandled()
 
-
-
-let sys        = System.create "" (Configuration.load())
-let inMemStore = InMemoryEventStore()
-
-let instance   = sys.ActorOf(Props.Create<InstanceActor>())
-
-//let actorFunc  = instanceActorFactory inMemStore inMemStore (NopAggregateClass()) "1234"
-
-//let actorRef   = spawn sys "instance" (actorOf2 actorFunc)
-
-do ()
-
-
-
+//
+//
+//let sys        = System.create "" (Configuration.load())
+//let inMemStore = InMemoryEventStore()
+//
+//let instance   = sys.ActorOf(Props.Create<InstanceActor>())
+//
+////let actorFunc  = instanceActorFactory inMemStore inMemStore (NopAggregateClass()) "1234"
+//
+////let actorRef   = spawn sys "instance" (actorOf2 actorFunc)
+//
+//do ()
+//
+//
+//

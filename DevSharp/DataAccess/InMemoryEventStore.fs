@@ -4,6 +4,7 @@ open System
 open System.Linq
 open System.Collections.Generic
 open DevSharp
+open System.Threading.Tasks
 
 type InMemoryEventStore() =
 
@@ -11,7 +12,11 @@ type InMemoryEventStore() =
     let allSnapshots = Dictionary<(TenantId * AggregateType * AggregateId), AggregateSnapshotCommit> (128)
     let lockObj = obj ()
 
-    member this.ReadCommits (observer: IObserver<EventStoreCommit>) request = 
+    member __.ReadCommits 
+        (onNext: (EventStoreCommit -> unit))
+        (onCompleted: (unit -> 'a))
+        (onError: (Exception -> 'a))
+        request = 
         let tenantId = request.request.tenantId
         let aggregateType = request.aggregateType
         let aggregateId = request.aggregateId
@@ -32,16 +37,23 @@ type InMemoryEventStore() =
             | true -> 
                 let events = Enumerable.Where (allEvents, eventsForRequest state.version)
                 Some state, events
-            
-        let (state, events) = lock lockObj getCommits
 
-        match state with
-        | Some s -> observer.OnNext (OnSnapshotCommit s)
-        
-        events |> Seq.iter (fun e -> observer.OnNext (OnEventsCommit e))
+        let task : Async<'a> = 
+            async {
+                let (state, events) = lock lockObj getCommits
+                do match state with
+                   | Some s -> onNext (OnSnapshotCommit s)
+                   | _ -> do ()
+                do events |> Seq.iter (fun e -> onNext (OnEventsCommit e))
+                return onCompleted ()
+            }
+        Async.StartAsTask task
 
 
-    member this.WriteCommit onSuccess onError request events state version  = 
+    member __.WriteCommit 
+        (onSuccess: (unit -> 'a)) 
+        (onError: (Exception -> 'a)) 
+        request events state version = 
         let tenantId = request.aggregate.request.tenantId
         let aggregateType = request.aggregate.aggregateType
         let aggregateId = request.aggregate.aggregateId
@@ -56,6 +68,7 @@ type InMemoryEventStore() =
                         version = version
                     }
                 allSnapshots.Item(key) <- snapshot
+            | _ -> do ()
 
             let commit = { 
                     events = events
@@ -63,16 +76,20 @@ type InMemoryEventStore() =
                     firstVersion = version - events.Length
                     request = request
                 }
-            allEvents.Add commit
+            do allEvents.Add commit
 
-        lock lockObj writeCommit
-
-        onSuccess ()
+        let task : Async<'a> = 
+            async {
+                do lock lockObj writeCommit
+                do! Async.Sleep 10
+                return onSuccess ()
+            }
+        Async.StartAsTask task
 
     
     interface IEventStoreReader with
-        override this.ReadCommits observer request = 
-            this.ReadCommits observer request
+        override this.ReadCommits onNext onCompleted onError request = 
+            this.ReadCommits onNext onCompleted onError request
     
     interface IEventStoreWriter with
         override this.WriteCommit onSuccess onError request events state version =
