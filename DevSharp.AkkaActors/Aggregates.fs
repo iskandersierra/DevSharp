@@ -40,7 +40,7 @@ type InstanceActor(reader: IEventStoreReader, writer: IEventStoreWriter, request
             do self <! RequestMessage (LoadDone, request)
 
         reader.ReadCommits onNext onCompleted onError request.aggregate
-        |> 
+        |> ignore
         
 
     override this.OnReceive(msg: obj) =
@@ -93,18 +93,3 @@ type InstanceActor(reader: IEventStoreReader, writer: IEventStoreWriter, request
             | _ -> 
                 do this.Unhandled()
 
-//
-//
-//let sys        = System.create "" (Configuration.load())
-//let inMemStore = InMemoryEventStore()
-//
-//let instance   = sys.ActorOf(Props.Create<InstanceActor>())
-//
-////let actorFunc  = instanceActorFactory inMemStore inMemStore (NopAggregateClass()) "1234"
-//
-////let actorRef   = spawn sys "instance" (actorOf2 actorFunc)
-//
-//do ()
-//
-//
-//
