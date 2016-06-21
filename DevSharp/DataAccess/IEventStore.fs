@@ -7,6 +7,8 @@ open System.Threading.Tasks
 type EventStoreCommit = 
 | OnSnapshotCommit of AggregateSnapshotCommit
 | OnEventsCommit of AggregateEventsCommit
+with
+    static member newVersion: AggregateVersion = 0
 and AggregateSnapshotCommit =
     {
         state: StateType
@@ -16,7 +18,7 @@ and AggregateSnapshotCommit =
 and AggregateEventsCommit =
     {
         events: EventType list
-        firstVersion: AggregateVersion
+        prevVersion: AggregateVersion
         lastVersion: AggregateVersion
         request: CommandRequest
     }

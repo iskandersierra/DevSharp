@@ -61,6 +61,7 @@
     <Compile Include="Serialization\CoreSerializationTests.fs" />
     <Compile Include="Messaging\CommandRequestTests.fs" />
     <Content Include="App.config" />
+    <Compile Include="DataAccess\InMemoryEventStoreTests.fs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="FsCheck">

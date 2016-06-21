@@ -23,7 +23,7 @@ let ``An empty command request should be equal to None`` () =
     request |> should equal None
 
 [<Test>]
-let ``A fully loaded command request should have all its parameters as Some value`` () =
+let ``A fully loaded command request should have all its parameters with expected values`` () =
     let properties = 
         Map.empty
             .Add(AggregateIdConstant,      "my aggregate id" :> obj)

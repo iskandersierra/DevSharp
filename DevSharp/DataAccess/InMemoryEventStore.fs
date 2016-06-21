@@ -22,8 +22,8 @@ type InMemoryEventStore() =
         let aggregateId = request.aggregateId
         let key = tenantId, aggregateType, aggregateId
         
-        let eventsForRequest minVersion (e: AggregateEventsCommit) = 
-            e.firstVersion > minVersion &&
+        let eventsForRequest (minVersion) (e: AggregateEventsCommit) = 
+            e.prevVersion >= minVersion &&
             e.request.aggregate.request.tenantId = tenantId && 
             e.request.aggregate.aggregateType = aggregateType && 
             e.request.aggregate.aggregateId = aggregateId
@@ -73,7 +73,7 @@ type InMemoryEventStore() =
             let commit = { 
                     events = events
                     lastVersion = version
-                    firstVersion = version - events.Length
+                    prevVersion = version - events.Length
                     request = request
                 }
             do allEvents.Add commit
@@ -86,6 +86,11 @@ type InMemoryEventStore() =
             }
         Async.StartAsTask task
 
+    member __.getAllEvents () =
+        lock lockObj (fun () -> allEvents |> Seq.toList)
+
+    member __.getAllSnapshots () =
+        lock lockObj (fun () -> allSnapshots |> Seq.map (fun pair -> pair.Key, pair.Value) |> Map.ofSeq)
     
     interface IEventStoreReader with
         override this.ReadCommits onNext onCompleted onError request = 
