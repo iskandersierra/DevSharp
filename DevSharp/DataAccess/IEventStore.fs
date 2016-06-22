@@ -13,31 +13,41 @@ and AggregateSnapshotCommit =
     {
         state: StateType
         version: AggregateVersion
-        lastRequest: CommandRequest
     }
 and AggregateEventsCommit =
     {
         events: EventType list
         prevVersion: AggregateVersion
-        lastVersion: AggregateVersion
+        version: AggregateVersion
         request: CommandRequest
     }
 
+type ReadCommitsInput =
+    {
+        request: AggregateRequest
+    }
+    with static member create request = 
+            { request = request }
+
+
 type IEventStoreReader =
-    abstract member ReadCommits<'a> : 
-        onNext: (EventStoreCommit -> unit) -> 
-        onCompleted: (unit -> 'a) -> 
-        onError: (Exception -> 'a) -> 
-        request: AggregateRequest -> 
+    abstract member readCommits<'a> : 
+        obs: ObserverFuncs<EventStoreCommit, 'a> -> 
+        input: ReadCommitsInput -> 
         Task<'a>
 
+type WriteCommitInput =
+    {
+        request: CommandRequest
+        events: EventType list
+        state: StateType option
+        expectedVersion: AggregateVersion
+    }
+    with static member create request events state expectedVersion = 
+            { request = request; events = events; state = state; expectedVersion = expectedVersion }
 
 type IEventStoreWriter =
-    abstract member WriteCommit<'a> : 
-        onSuccess: (unit -> 'a) -> 
-        onError: (Exception -> 'a) -> 
-        request: CommandRequest -> 
-        events: EventType list -> 
-        state: StateType option -> 
-        version: AggregateVersion -> 
+    abstract member writeCommit<'a> : 
+        completion: CompletionFuncs<'a> ->
+        input: WriteCommitInput -> 
         Task<'a>

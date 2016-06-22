@@ -8,11 +8,18 @@ open DevSharp.Validations.ValidationUtils
 
 type InputMessage =
 | LoadState         of StateType * AggregateVersion
-| LoadEvent         of EventType
+| LoadEvent         of EventType * CommandRequest
 | LoadError         of Exception
 | LoadDone
-| ReceiveCommand    of CommandType * AggregateVersion
-| ApplyEvents       of EventType list
+| ReceiveCommand    of CommandType * AggregateVersion * CommandRequest
+| ApplyEvents       of EventType list * CommandRequest
+with
+    static member loadState state version                        = LoadState (state, version)
+    static member loadEvent event request                        = LoadEvent (event, request)
+    static member loadError exn                                  = LoadError exn
+    static member loadDone                                       = LoadDone
+    static member receiveCommand command expectedVersion request = ReceiveCommand (command, expectedVersion, request)
+    static member applyEvents events request                     = ApplyEvents (events, request)
 
 type OutputMessage =
 | CommandDone
@@ -26,6 +33,18 @@ type OutputMessage =
 | PostponeMessage
 | MessageRejected
 | MessageAccepted
+with
+    static member commandDone               = CommandDone
+    static member eventsEmitted events      = EventsEmitted events
+    static member invalidCommand validation = InvalidCommand validation
+    static member validateFailed exn        = ValidateFailed exn
+    static member actFailed exn             = ActFailed exn
+    static member applyFailed exn           = ApplyFailed exn
+    static member loadingFailed exn         = LoadingFailed exn
+    static member unexpectedVersion         = UnexpectedVersion
+    static member postponeMessage           = PostponeMessage
+    static member messageRejected           = MessageRejected
+    static member messageAccepted           = MessageAccepted
 
 type Mode =
 | Loading
@@ -45,13 +64,13 @@ type BehaviorState =
 type ReceiveResult =
 | ReceiveResult of OutputMessage * BehaviorState
 
-let receiveResult output behavior = ReceiveResult (output, behavior)
-let eventsEmitted events behavior = receiveResult (EventsEmitted events) behavior
-let invalidCommand result behavior = receiveResult (InvalidCommand result) behavior
-let validateFailed ex behavior = receiveResult (ValidateFailed ex) behavior
-let actFailed ex behavior = receiveResult (ActFailed ex) behavior
-let applyFailed ex behavior = receiveResult (ApplyFailed ex) behavior
-let loadingFailed ex behavior = receiveResult (LoadingFailed ex) behavior
+let private receiveResult output behavior = ReceiveResult (output, behavior)
+let private eventsEmitted events behavior = receiveResult (OutputMessage.eventsEmitted events) behavior
+let private invalidCommand result behavior = receiveResult (OutputMessage.invalidCommand result) behavior
+let private validateFailed ex behavior = receiveResult (OutputMessage.validateFailed ex) behavior
+let private actFailed ex behavior = receiveResult (OutputMessage.actFailed ex) behavior
+let private applyFailed ex behavior = receiveResult (OutputMessage.applyFailed ex) behavior
+let private loadingFailed ex behavior = receiveResult (OutputMessage.loadingFailed ex) behavior
 
 
 (*     Internal functions      *)
@@ -119,14 +138,14 @@ let actOnCommand bahavior state command request =
 
 
 
-let receiveWhileLoading behavior message request =
+let receiveWhileLoading behavior message =
     match message with
     | LoadState (state, version) ->
         if behavior.version = 0 
         then receiveResult MessageAccepted { behavior with state = state; version = version }
         else receiveResult MessageRejected behavior
 
-    | LoadEvent event -> 
+    | LoadEvent (event, request) -> 
         match applyEvent behavior event request with
         | EventWasApplied newState -> 
             receiveResult MessageAccepted newState
@@ -142,9 +161,9 @@ let receiveWhileLoading behavior message request =
     | ApplyEvents _ -> 
         receiveResult MessageRejected behavior
 
-let receiveWhileReceiving behavior message request =
+let receiveWhileReceiving behavior message =
     match message with
-    | ReceiveCommand ( command, expectedVersion ) ->
+    | ReceiveCommand ( command, expectedVersion, request ) ->
         if behavior.version <> expectedVersion
         then receiveResult UnexpectedVersion behavior
         else
@@ -164,9 +183,9 @@ let receiveWhileReceiving behavior message request =
                         
     | _ -> receiveResult MessageRejected behavior
 
-let receiveWhileEmitting behavior message request =
+let receiveWhileEmitting behavior message =
     match message with
-    | ApplyEvents events -> 
+    | ApplyEvents (events, request) -> 
         match applyEvents behavior events request with
         | EventWasApplied newState -> 
             receiveResult MessageAccepted { newState with mode = Receiving }
@@ -191,13 +210,13 @@ let init class' id =
         state = class'.init;
     }
 
-let receive behavior message request = 
+let receive behavior message = 
     match behavior.mode with
     | Loading ->
-        receiveWhileLoading behavior message request
+        receiveWhileLoading behavior message
 
     | Receiving ->
-        receiveWhileReceiving behavior message request
+        receiveWhileReceiving behavior message
 
     | Emitting ->
-        receiveWhileEmitting behavior message request
+        receiveWhileEmitting behavior message

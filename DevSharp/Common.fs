@@ -129,7 +129,30 @@ let toCommandRequest (properties: PropertiesType) : CommandRequest option =
 // Observable definitions
 
 type OnNextFunc<'a> = 'a -> unit
-type OnCompletedFunc<'a, 'b> = 'a -> 'b
-type OnErrorFunc<'b> = OnCompletedFunc<exn, 'b>
+type OnCompletedFunc<'b> = unit -> 'b
+type OnErrorFunc<'b> = exn -> 'b
 
-type CompletionFuncs<'a, 'b> = (OnCompletedFunc<'a, 'b>, OnErrorFunc<'b>)
+type CompletionFuncs<'b> = 
+    {
+        onCompleted: OnCompletedFunc<'b>
+        onError: OnErrorFunc<'b>
+    }
+type ObserverFuncs<'a, 'b> = 
+    {
+        onNext: OnNextFunc<'a>
+        onCompleted: OnCompletedFunc<'b>
+        onError: OnErrorFunc<'b>
+    }
+
+let completion onCompleted onError : CompletionFuncs<'b> =
+    {
+        onCompleted = onCompleted
+        onError = onError
+    }
+
+let observer onNext onCompleted onError =
+    {
+        onNext = onNext
+        onCompleted = onCompleted
+        onError = onError
+    }

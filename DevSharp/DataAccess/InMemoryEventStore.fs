@@ -4,22 +4,25 @@ open System
 open System.Linq
 open System.Collections.Generic
 open DevSharp
-open System.Threading.Tasks
+
+type AggregateKey = TenantId * AggregateType * AggregateId
+type PersistedAggregate =
+    {
+        key: AggregateKey
+        version: AggregateVersion
+        events: AggregateEventsCommit list
+        snapshot: AggregateSnapshotCommit option
+    }
 
 type InMemoryEventStore() =
 
-    let allEvents = List<AggregateEventsCommit> (1024)
-    let allSnapshots = Dictionary<(TenantId * AggregateType * AggregateId), AggregateSnapshotCommit> (128)
+    let aggregates = Dictionary<AggregateKey, PersistedAggregate> (16)
     let lockObj = obj ()
 
-    member __.ReadCommits 
-        (onNext: (EventStoreCommit -> unit))
-        (onCompleted: (unit -> 'a))
-        (onError: (Exception -> 'a))
-        request = 
-        let tenantId = request.request.tenantId
-        let aggregateType = request.aggregateType
-        let aggregateId = request.aggregateId
+    member __.readCommits (obs: ObserverFuncs<EventStoreCommit, 'a>) (input: ReadCommitsInput) = 
+        let tenantId = input.request.request.tenantId
+        let aggregateType = input.request.aggregateType
+        let aggregateId = input.request.aggregateId
         let key = tenantId, aggregateType, aggregateId
         
         let eventsForRequest (minVersion) (e: AggregateEventsCommit) = 
@@ -29,74 +32,108 @@ type InMemoryEventStore() =
             e.request.aggregate.aggregateId = aggregateId
         
         let getCommits () =
-            let (stateFound, state) = allSnapshots.TryGetValue key
-            match stateFound with
-            | false -> 
-                let events = Enumerable.Where (allEvents, eventsForRequest 0)
-                None, events
+            let (found, aggregate) = aggregates.TryGetValue key
+            match found with
+            | false -> None, Seq.empty
             | true -> 
-                let events = Enumerable.Where (allEvents, eventsForRequest state.version)
-                Some state, events
+                match aggregate.snapshot with
+                | None ->
+                    let events = aggregate.events 
+                                |> List.toSeq
+                    None, events
+                | Some state ->
+                    //let events =  Enumerable.Where (aggregate.events, eventsForRequest state.version)
+                    let events = aggregate.events 
+                                |> Seq.filter (eventsForRequest state.version)
+                                |> Seq.toList
+                                |> List.toSeq
+                    Some state, events
 
         let task : Async<'a> = 
             async {
                 let (state, events) = lock lockObj getCommits
                 do match state with
-                   | Some s -> onNext (OnSnapshotCommit s)
+                   | Some s -> obs.onNext (OnSnapshotCommit s)
                    | _ -> do ()
-                do events |> Seq.iter (fun e -> onNext (OnEventsCommit e))
-                return onCompleted ()
+                do events |> Seq.iter (fun e -> obs.onNext (OnEventsCommit e))
+                return obs.onCompleted ()
             }
         Async.StartAsTask task
 
 
-    member __.WriteCommit 
-        (onSuccess: (unit -> 'a)) 
-        (onError: (Exception -> 'a)) 
-        request events state version = 
-        let tenantId = request.aggregate.request.tenantId
-        let aggregateType = request.aggregate.aggregateType
-        let aggregateId = request.aggregate.aggregateId
+    member __.writeCommit (completion: CompletionFuncs<'a>) (input: WriteCommitInput) = 
+        let tenantId = input.request.aggregate.request.tenantId
+        let aggregateType = input.request.aggregate.aggregateType
+        let aggregateId = input.request.aggregate.aggregateId
         let key = tenantId, aggregateType, aggregateId
 
-        let writeCommit () =
-            match state with
-            | Some s -> 
-                let snapshot = { 
-                        state = s
-                        lastRequest = request
-                        version = version
-                    }
-                allSnapshots.Item(key) <- snapshot
-            | _ -> do ()
+        let writeCommit (completion: CompletionFuncs<'a>) () =
+            let found, foundAggregate = aggregates.TryGetValue key
 
-            let commit = { 
-                    events = events
-                    lastVersion = version
-                    prevVersion = version - events.Length
-                    request = request
-                }
-            do allEvents.Add commit
+            let aggregate = 
+                match found with 
+                | false -> 
+                    {
+                        key = key
+                        version = 0
+                        events = []
+                        snapshot = None
+                    }
+                | true -> foundAggregate
+
+            match input.expectedVersion = aggregate.version with
+            | false -> 
+                completion.onError (Exception("Unexpected aggregate version while writing commit"))
+
+            | true -> 
+                let commit = { 
+                        events = input.events
+                        version = input.expectedVersion
+                        prevVersion = input.expectedVersion - input.events.Length
+                        request = input.request
+                    }
+
+                let newEvents = aggregate.events @ [ commit ]
+
+                let newVersion = aggregate.version + (input.events |> List.length)
+
+                let newSnapshot = 
+                    match input.state with
+                    | None -> aggregate.snapshot
+                    | Some state -> 
+                        Some {
+                            state = state
+                            version = newVersion
+                        }
+
+                let newAggregate = 
+                    {
+                        aggregate with
+                            version = newVersion
+                            events = newEvents
+                            snapshot = newSnapshot
+                    }
+
+                do aggregates.Item(key) <- newAggregate
+
+                completion.onCompleted ()
 
         let task : Async<'a> = 
             async {
-                do lock lockObj writeCommit
-                do! Async.Sleep 10
-                return onSuccess ()
+                return lock lockObj (writeCommit completion)
             }
         Async.StartAsTask task
 
-    member __.getAllEvents () =
-        lock lockObj (fun () -> allEvents |> Seq.toList)
-
-    member __.getAllSnapshots () =
-        lock lockObj (fun () -> allSnapshots |> Seq.map (fun pair -> pair.Key, pair.Value) |> Map.ofSeq)
+    member __.getAllAggregates () =
+        let toTuple (pair: KeyValuePair<'a, 'b>) = pair.Key, pair.Value
+        let toMap () = aggregates |> Seq.map toTuple |> Map.ofSeq
+        lock lockObj toMap
     
     interface IEventStoreReader with
-        override this.ReadCommits onNext onCompleted onError request = 
-            this.ReadCommits onNext onCompleted onError request
+        override this.readCommits obs input = 
+            this.readCommits obs input
     
     interface IEventStoreWriter with
-        override this.WriteCommit onSuccess onError request events state version =
-            this.WriteCommit onSuccess onError request events state version 
+        override this.writeCommit completion input =
+            this.writeCommit completion input
 
