@@ -4,6 +4,8 @@ module DevSharp.Common
 open System
 open FSharp.Core
 
+// Request definitions
+
 let TenantIdConstant         = "TNT_ID"
 let ApplicationIdConstant    = "APP_ID"
 let ProjectIdConstant        = "PRJ_ID"
@@ -124,3 +126,10 @@ let toCommandRequest (properties: PropertiesType) : CommandRequest option =
     | _ -> 
         None
 
+// Observable definitions
+
+type OnNextFunc<'a> = 'a -> unit
+type OnCompletedFunc<'a, 'b> = 'a -> 'b
+type OnErrorFunc<'b> = OnCompletedFunc<exn, 'b>
+
+type CompletionFuncs<'a, 'b> = (OnCompletedFunc<'a, 'b>, OnErrorFunc<'b>)
