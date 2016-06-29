@@ -4,6 +4,12 @@ module DevSharp.Common
 open System
 open FSharp.Core
 
+// Result
+
+type AResult<'a, 'b> =
+| ASuccess of 'a
+| AFailure of 'b
+
 // Request definitions
 
 let TenantIdConstant         = "TNT_ID"

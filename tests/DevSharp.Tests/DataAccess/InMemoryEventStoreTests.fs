@@ -9,6 +9,8 @@ open Samples.Domains.TodoList
 open DevSharp
 open DevSharp.DataAccess
 open NUnit.Framework.Constraints
+open FSharp.Core
+open System.Threading.Tasks
 
 
 let initTitle = "TodoList initial title"
@@ -48,7 +50,14 @@ let testSetup () =
 [<Test>] 
 let ``A new in-memory event store must be empty`` () =
     let store = InMemoryEventStore()
-    do store.getAllAggregates () |> should equal Map.empty
+    let list = new System.Collections.Generic.List<EventStoreCommit>()
+    let obs = observer 
+                (fun e -> list.Add(e))
+                (fun () -> list |> Seq.toList |> ASuccess)
+                (fun exn -> AFailure exn)
+    let input = ReadCommitsInput.create request.aggregate
+    let events = (store.readCommits obs input).Result
+    do events |> should equal (ASuccess [])
 
 [<Test>] 
 let ``A new in-memory event store must accept an event commit with one event`` () =
@@ -63,6 +72,4 @@ let ``A new in-memory event store must accept an event commit with one event`` (
     }
     do task |> should not' (be Null)
     do task.Result |> should be True
-    do store.getAllAggregates () 
-        |> should equal Map.empty
 

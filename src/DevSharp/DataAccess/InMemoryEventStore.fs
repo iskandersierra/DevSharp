@@ -123,11 +123,11 @@ type InMemoryEventStore() =
                 return lock lockObj (writeCommit completion)
             }
         Async.StartAsTask task
-
-    member __.getAllAggregates () =
-        let toTuple (pair: KeyValuePair<'a, 'b>) = pair.Key, pair.Value
-        let toMap () = aggregates |> Seq.map toTuple |> Map.ofSeq
-        lock lockObj toMap
+//
+//    member __.getAllAggregates () =
+//        let toTuple (pair: KeyValuePair<'a, 'b>) = pair.Key, pair.Value
+//        let toMap () = aggregates |> Seq.map toTuple |> Map.ofSeq
+//        lock lockObj toMap
     
     interface IEventStoreReader with
         override this.readCommits obs input = 
