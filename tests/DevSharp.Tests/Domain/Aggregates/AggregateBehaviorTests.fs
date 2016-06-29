@@ -62,7 +62,7 @@ let testLoadingState loadState loadVersion loadEvents message =
         <| message 
 
 let testReceiving loadEvents message =  
-    let messages = (loadEvents |> List.map (fun e -> InputMessage.loadEvent e request)) @ [ LoadDone ]
+    let messages = (loadEvents |> List.map (fun e -> InputMessage.loadEvent e request)) @ [ InputMessage.loadDone ]
     receive 
         <| someBehavior messages 
         <| message 
@@ -115,8 +115,8 @@ let ``Aggregate initial behavior state should be as expected`` () =
 let ``When Aggregate behavior, while Loading, if it receives a LoadEvent message, it should Accept it and continue Loading`` () =
     let event = Incremented
     let (ReceiveResult (output, state)) = testLoading [] <| InputMessage.loadEvent event request
-    output |> should equal MessageAccepted
-    state |> should equal (testingState Loading 1 [ event ])
+    do output |> should equal OutputMessage.messageAccepted
+    do state |> should equal (testingState Loading 1 [ event ])
 
 [<Test>]
 let ``When Aggregate behavior, while Loading from version 0, if it receives a LoadState message, it should Accept it and continue Loading`` () =
@@ -124,8 +124,8 @@ let ``When Aggregate behavior, while Loading from version 0, if it receives a Lo
     let events = [ Incremented; Incremented; Decremented; Incremented ]
     let snapshot = events |> List.fold (fun s e -> (testingApply e s)) testingInit
     let (ReceiveResult (output, state)) = testLoadingState snapshot events.Length [] <| InputMessage.loadEvent event request
-    output |> should equal MessageAccepted
-    state |> should equal <| testingState Loading 5 (events @ [ event ])
+    do output |> should equal OutputMessage.messageAccepted
+    do state |> should equal <| testingState Loading 5 (events @ [ event ])
 
 [<Test>]
 let ``When Aggregate behavior, while Loading from version 5, if it receives a LoadState message, it should Reject it and continue Loading`` () =
@@ -134,47 +134,49 @@ let ``When Aggregate behavior, while Loading from version 5, if it receives a Lo
     let (ReceiveResult (output, state)) = 
         receive 
         <| midState 
-        <| (LoadState (midState.state, midState.version)) 
+        <| InputMessage.loadState midState.state midState.version 
 
-    output |> should equal MessageRejected
-    state |> should equal midState
+    do output |> should equal OutputMessage.messageRejected
+    do state |> should equal midState
 
 [<Test>]
 let ``When Aggregate behavior, while Loading, if it receives a failing event message, it should give a LoadingFailed response and continue Loading`` () =
     let event = FailingEvent
     let (ReceiveResult (output, state)) = testLoading [] <| InputMessage.loadEvent event request
     match output with
-    | LoadingFailed e -> e |> should be instanceOfType<InvalidOperationException>
-    state |> should equal <| testingState Loading 0 []
+    | ExceptionMessage (e, LoadingFailed) -> do e |> should be instanceOfType<InvalidOperationException>
+    | _ -> do Assert.Fail "Should return an invalid operation exception"
+    do state |> should equal <| testingState Loading 0 []
 
 [<Test>]
 let ``When Aggregate behavior, while Loading, if it receives a LoadError message, it should give a LoadingFailed response and continue Loading`` () =
     let ex = InvalidOperationException "Failing event"
     let (ReceiveResult (output, state)) = testLoading [] <| InputMessage.loadError ex 
     match output with
-    | LoadingFailed e -> e |> should be instanceOfType<InvalidOperationException>
-    state |> should equal <| testingState Loading 0 []
+    | ExceptionMessage (e, LoadingFailed) -> do e |> should be instanceOfType<InvalidOperationException>
+    | _ -> do Assert.Fail "Should return an invalid operation exception"
+    do state |> should equal <| testingState Loading 0 []
 
 [<Test>]
 let ``When Aggregate behavior, while Loading, if it receives a LoadDone message, it should give a MessageAccepted response and continue Loading`` () =
     let events = [ Incremented; Incremented; Decremented; Incremented; ] 
-    let (ReceiveResult (output, state)) = testLoading events <| LoadDone 
-    output |> should equal MessageAccepted
-    state |> should equal <| testingState Receiving 4 events
+    let (ReceiveResult (output, state)) = testLoading events <| InputMessage.loadDone 
+    do output |> should equal OutputMessage.messageAccepted
+    do state |> should equal <| testingState Receiving 4 events
 
 [<Test>]
 let ``When Aggregate behavior, while Loading, if it ReceiveCommand message, it should give a PostponeMessage response and continue in Loading state`` () =
     let events = [ Incremented; Incremented; Decremented; Incremented; ] 
     let (ReceiveResult (output, state)) = testLoading events <| InputMessage.receiveCommand Increment 4 request
-    output |> should equal PostponeMessage
-    state |> should equal <| testingState Loading 4 events
+    do output |> should equal PostponeMessage
+    do state |> should equal <| testingState Loading 4 events
 
 [<Test>]
 let ``When Aggregate behavior, while Loading, if it receive a ApplyEvents message, it should give a MessageRejected response and continue in Loading state`` () =
     let events = [ Incremented; Incremented; Decremented; Incremented; ] 
     let (ReceiveResult (output, state)) = testLoading events <| InputMessage.applyEvents [ Incremented ] request
-    output |> should equal MessageRejected
-    state |> should equal <| testingState Loading 4 events
+    do output |> should equal OutputMessage.messageRejected
+    do state |> should equal <| testingState Loading 4 events
 
 
 (*  Receiving  *)
@@ -183,61 +185,61 @@ let ``When Aggregate behavior, while Loading, if it receive a ApplyEvents messag
 let ``When Aggregate behavior, while Receiving, if it receive a valid command, it should give a EventsEmitted response and go to Emitting state`` () =
     let events = [ Incremented; Incremented; Decremented; Incremented; ] 
     let (ReceiveResult (output, state)) = testReceiving events <| InputMessage.receiveCommand Increment 4 request
-    output |> should equal <| EventsEmitted [ Incremented ]
-    state |> should equal <| testingState Emitting 4 events
+    do output |> should equal <| EventsEmitted [ Incremented ]
+    do state |> should equal <| testingState Emitting 4 events
 
 [<Test>]
 let ``When Aggregate behavior, while Receiving, if it receive a command with unexpected version, it should give a UnexpectedVersion response and continue in Receiving state`` () =
     let events = [ Incremented; Incremented; Decremented; Incremented; ] 
     let (ReceiveResult (output, state)) = testReceiving events <| InputMessage.receiveCommand Increment 3 request
-    output |> should equal UnexpectedVersion
-    state |> should equal <| testingState Receiving 4 events
+    do output |> should equal OutputMessage.unexpectedVersion
+    do state |> should equal <| testingState Receiving 4 events
 
 [<Test>]
 let ``When Aggregate behavior, while Receiving, if it receive an invalid command, it should give a IsInvalidCommand response and continue in Receiving state`` () =
     let events = [ Incremented; Incremented; Decremented; Incremented; ] 
     let (ReceiveResult (output, state)) = testReceiving events <| InputMessage.receiveCommand InvalidCommand 4 request
     match output with
-    | OutputMessage.InvalidCommand e -> ()
-    | _ -> Assert.Fail(sprintf "Response should be InvalidCommand but was %A" output)
-    state |> should equal <| testingState Receiving 4 events
+    | OutputMessage.InvalidCommand e -> do ()
+    | _ -> do Assert.Fail(sprintf "Response should be InvalidCommand but was %A" output)
+    do state |> should equal <| testingState Receiving 4 events
 
 [<Test>]
 let ``When Aggregate behavior, while Receiving, if it receive a failing command, it should give a ActFailed response and continue in Receiving state`` () =
     let events = [ Incremented; Incremented; Decremented; Incremented; ] 
     let (ReceiveResult (output, state)) = testReceiving events <| InputMessage.receiveCommand FailingCommand 4 request
     match output with
-    | OutputMessage.InvalidCommand v -> ()
-    | _ -> Assert.Fail(sprintf "Response should be InvalidCommand but was %A" output)
-    state |> should equal <| testingState Receiving 4 events
+    | OutputMessage.InvalidCommand v -> do ()
+    | _ -> do Assert.Fail(sprintf "Response should be InvalidCommand but was %A" output)
+    do state |> should equal <| testingState Receiving 4 events
 
 [<Test>]
 let ``When Aggregate behavior, while Receiving, if it receive a LoadEvent message, it should give a MessageRejected response and continue in Receiving state`` () =
     let events = [ Incremented; Incremented; Decremented; Incremented; ] 
     let (ReceiveResult (output, state)) = testReceiving events <| InputMessage.loadEvent [ Incremented ] request
-    output |> should equal MessageRejected
-    state |> should equal <| testingState Receiving 4 events
+    do output |> should equal OutputMessage.messageRejected
+    do state |> should equal <| testingState Receiving 4 events
 
 [<Test>]
 let ``When Aggregate behavior, while Receiving, if it receive a LoadError message, it should give a MessageRejected response and continue in Receiving state`` () =
     let events = [ Incremented; Incremented; Decremented; Incremented; ] 
     let (ReceiveResult (output, state)) = testReceiving events <| InputMessage.loadError (InvalidOperationException "message")
-    output |> should equal MessageRejected
-    state |> should equal <| testingState Receiving 4 events
+    do output |> should equal OutputMessage.messageRejected
+    do state |> should equal <| testingState Receiving 4 events
 
 [<Test>]
 let ``When Aggregate behavior, while Receiving, if it receive a LoadDone message, it should give a MessageRejected response and continue in Receiving state`` () =
     let events = [ Incremented; Incremented; Decremented; Incremented; ] 
-    let (ReceiveResult (output, state)) = testReceiving events <| LoadDone
-    output |> should equal MessageRejected
-    state |> should equal <| testingState Receiving 4 events
+    let (ReceiveResult (output, state)) = testReceiving events <| InputMessage.loadDone
+    do output |> should equal OutputMessage.messageRejected
+    do state |> should equal <| testingState Receiving 4 events
 
 [<Test>]
 let ``When Aggregate behavior, while Receiving, if it receive a ApplyEvents message, it should give a MessageRejected response and continue in Receiving state`` () =
     let events = [ Incremented; Incremented; Decremented; Incremented; ] 
     let (ReceiveResult (output, state)) = testReceiving events <| InputMessage.applyEvents [] request
-    output |> should equal MessageRejected
-    state |> should equal <| testingState Receiving 4 events
+    do output |> should equal OutputMessage.messageRejected
+    do state |> should equal <| testingState Receiving 4 events
 
 
 (*  Receiving  *)
@@ -246,42 +248,42 @@ let ``When Aggregate behavior, while Receiving, if it receive a ApplyEvents mess
 let ``When Aggregate behavior, while Emitting, if it receive a ApplyEvents message, it should give a MessageAccepted response, apply the events to behavior state and go to Receiving state`` () =
     let events = [ Incremented; Incremented; Decremented; Incremented; ] 
     let (ReceiveResult (output, state)) = testEmitting events <| Increment <| InputMessage.applyEvents [ Incremented ] request
-    output |> should equal MessageAccepted
-    state |> should equal <| testingState Receiving 5 (events @ [ Incremented ])
+    do output |> should equal OutputMessage.messageAccepted
+    do state |> should equal <| testingState Receiving 5 (events @ [ Incremented ])
 
 [<Test>]
 let ``When Aggregate behavior, while Emitting, if it receive a ApplyEvents message with failing event, it should give a ApplyFailed response and go to Receiving state`` () =
     let events = [ Incremented; Incremented; Decremented; Incremented; ] 
     let (ReceiveResult (output, state)) = testEmitting events <| Increment <| InputMessage.applyEvents [ FailingEvent ] request
     match output with
-    | OutputMessage.ApplyFailed e -> ()
-    | _ -> Assert.Fail(sprintf "Response should be ApplyFailed but was %A" output)
-    state |> should equal <| testingState Receiving 4 events
+    | ExceptionMessage (_, ApplyFailed) -> do ()
+    | _ -> do Assert.Fail(sprintf "Response should be ApplyFailed but was %A" output)
+    do state |> should equal <| testingState Receiving 4 events
 
 [<Test>]
 let ``When Aggregate behavior, while Emitting, if it receive a LoadEvent message, it should give a MessageRejected response and continue in Emitting state`` () =
     let events = [ Incremented; Incremented; Decremented; Incremented; ] 
     let (ReceiveResult (output, state)) = testEmitting events <| Increment <| InputMessage.loadEvent [ Decremented ] request
-    output |> should equal MessageRejected
-    state |> should equal <| testingState Emitting 4 events
+    do output |> should equal OutputMessage.messageRejected
+    do state |> should equal <| testingState Emitting 4 events
 
 [<Test>]
 let ``When Aggregate behavior, while Emitting, if it receive a LoadError message, it should give a MessageRejected response and continue in Emitting state`` () =
     let events = [ Incremented; Incremented; Decremented; Incremented; ] 
     let (ReceiveResult (output, state)) = testEmitting events <| Increment <| InputMessage.loadError (InvalidOperationException "message")
-    output |> should equal MessageRejected
-    state |> should equal <| testingState Emitting 4 events
+    do output |> should equal OutputMessage.messageRejected
+    do state |> should equal <| testingState Emitting 4 events
 
 [<Test>]
 let ``When Aggregate behavior, while Emitting, if it receive a LoadDone message, it should give a MessageRejected response and continue in Emitting state`` () =
     let events = [ Incremented; Incremented; Decremented; Incremented; ] 
     let (ReceiveResult (output, state)) = testEmitting events <| Increment <| InputMessage.loadEvent [ Decremented ] request
-    output |> should equal MessageRejected
-    state |> should equal <| testingState Emitting 4 events
+    do output |> should equal OutputMessage.messageRejected
+    do state |> should equal <| testingState Emitting 4 events
 
 [<Test>]
 let ``When Aggregate behavior, while Emitting, if it receive a ReceiveCommand message, it should give a PostponeMessage response and continue in Emitting state`` () =
     let events = [ Incremented; Incremented; Decremented; Incremented; ] 
     let (ReceiveResult (output, state)) = testEmitting events Increment <| InputMessage.receiveCommand Decrement 5 request
-    output |> should equal PostponeMessage
-    state |> should equal <| testingState Emitting 4 events
+    do output |> should equal OutputMessage.postponeMessage
+    do state |> should equal <| testingState Emitting 4 events

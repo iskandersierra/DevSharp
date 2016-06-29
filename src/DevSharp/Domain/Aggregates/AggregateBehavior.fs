@@ -7,44 +7,57 @@ open DevSharp.Validations.ValidationUtils
 
 
 type InputMessage =
-| LoadState         of StateType * AggregateVersion
-| LoadEvent         of EventType * CommandRequest
-| LoadError         of Exception
-| LoadDone
-| ReceiveCommand    of CommandType * AggregateVersion * CommandRequest
-| ApplyEvents       of EventType list * CommandRequest
+| LoadingMessage   of LoadingMessage
+| ReceivingMessage of ReceivingMessage
+| EmittingMessage  of EmittingMessage
 with
-    static member loadState state version                        = LoadState (state, version)
-    static member loadEvent event request                        = LoadEvent (event, request)
-    static member loadError exn                                  = LoadError exn
-    static member loadDone                                       = LoadDone
-    static member receiveCommand command expectedVersion request = ReceiveCommand (command, expectedVersion, request)
-    static member applyEvents events request                     = ApplyEvents (events, request)
+    static member loadState state version                        = LoadingMessage (LoadState (state, version))
+    static member loadEvent event request                        = LoadingMessage (LoadEvent (event, request))
+    static member loadError exn                                  = LoadingMessage (LoadError exn)
+    static member loadDone                                       = LoadingMessage (LoadDone)
+    static member receiveCommand command expectedVersion request = ReceivingMessage (ReceiveCommand (command, expectedVersion, request))
+    static member applyEvents events request                     = EmittingMessage (ApplyEvents (events, request))
+and LoadingMessage   =
+| LoadState          of StateType * AggregateVersion
+| LoadEvent          of EventType * CommandRequest
+| LoadError          of Exception
+| LoadDone
+and ReceivingMessage =
+| ReceiveCommand     of CommandType * AggregateVersion * CommandRequest
+and EmittingMessage  =
+| ApplyEvents        of EventType list * CommandRequest
 
 type OutputMessage =
-| CommandDone
+| SuccessMessage    of SuccessMessage
 | EventsEmitted     of EventType list
 | InvalidCommand    of ValidationResult
-| ValidateFailed    of Exception
-| ActFailed         of Exception
-| ApplyFailed       of Exception
-| LoadingFailed     of Exception
-| UnexpectedVersion
+| ExceptionMessage  of Exception * ExceptionMessage
+| RejectionMessage  of RejectionMessage
 | PostponeMessage
-| MessageRejected
-| MessageAccepted
 with
-    static member commandDone               = CommandDone
-    static member eventsEmitted events      = EventsEmitted events
-    static member invalidCommand validation = InvalidCommand validation
-    static member validateFailed exn        = ValidateFailed exn
-    static member actFailed exn             = ActFailed exn
-    static member applyFailed exn           = ApplyFailed exn
-    static member loadingFailed exn         = LoadingFailed exn
-    static member unexpectedVersion         = UnexpectedVersion
+    static member commandDone               = SuccessMessage   CommandDone
+    static member messageAccepted           = SuccessMessage   MessageAccepted
+    static member unexpectedVersion         = RejectionMessage UnexpectedVersion
+    static member messageRejected           = RejectionMessage MessageRejected
+    static member eventsEmitted events      = EventsEmitted    events
+    static member invalidCommand validation = InvalidCommand   validation
+    static member validateFailed exn        = ExceptionMessage (exn, ValidateFailed)
+    static member actFailed exn             = ExceptionMessage (exn, ActFailed)
+    static member applyFailed exn           = ExceptionMessage (exn, ApplyFailed)
+    static member loadingFailed exn         = ExceptionMessage (exn, LoadingFailed)
     static member postponeMessage           = PostponeMessage
-    static member messageRejected           = MessageRejected
-    static member messageAccepted           = MessageAccepted
+and SuccessMessage =
+| CommandDone
+| MessageAccepted
+and RejectionMessage =
+| UnexpectedVersion
+| MessageRejected
+and ExceptionMessage =
+| ValidateFailed
+| ActFailed
+| ApplyFailed
+| LoadingFailed
+
 
 type Mode =
 | Loading
@@ -74,7 +87,6 @@ let private loadingFailed ex behavior = receiveResult (OutputMessage.loadingFail
 
 
 (*     Internal functions      *)
-
 
 
 type ValidateCommandResult =
@@ -142,30 +154,26 @@ let receiveWhileLoading behavior message =
     match message with
     | LoadState (state, version) ->
         if behavior.version = 0 
-        then receiveResult MessageAccepted { behavior with state = state; version = version }
-        else receiveResult MessageRejected behavior
+        then receiveResult OutputMessage.messageAccepted { behavior with state = state; version = version }
+        else receiveResult OutputMessage.messageRejected behavior
 
     | LoadEvent (event, request) -> 
         match applyEvent behavior event request with
         | EventWasApplied newState -> 
-            receiveResult MessageAccepted newState
+            receiveResult OutputMessage.messageAccepted newState
         | ApplyEventHasFailed ex -> 
             loadingFailed ex behavior
         
     | LoadError ex -> 
         loadingFailed ex behavior
     | LoadDone -> 
-        receiveResult MessageAccepted { behavior with mode = Receiving }
-    | ReceiveCommand _ -> 
-        receiveResult PostponeMessage behavior
-    | ApplyEvents _ -> 
-        receiveResult MessageRejected behavior
+        receiveResult OutputMessage.messageAccepted { behavior with mode = Receiving }
 
 let receiveWhileReceiving behavior message =
     match message with
     | ReceiveCommand ( command, expectedVersion, request ) ->
         if behavior.version <> expectedVersion
-        then receiveResult UnexpectedVersion behavior
+        then receiveResult OutputMessage.unexpectedVersion behavior
         else
             match validateCommand behavior command request with
             | ValidationHasFailed ex -> 
@@ -180,26 +188,18 @@ let receiveWhileReceiving behavior message =
                     eventsEmitted events { behavior with mode = Emitting }
                 | CommandWasNotActedOn -> 
                     invalidCommand (commandFailureResult "Command was not supposed to be received on current state") behavior
-                        
-    | _ -> receiveResult MessageRejected behavior
 
 let receiveWhileEmitting behavior message =
     match message with
     | ApplyEvents (events, request) -> 
         match applyEvents behavior events request with
         | EventWasApplied newState -> 
-            receiveResult MessageAccepted { newState with mode = Receiving }
+            receiveResult OutputMessage.messageAccepted { newState with mode = Receiving }
         | ApplyEventHasFailed ex -> 
             applyFailed ex { behavior with mode = Receiving }
-    | ReceiveCommand _ -> 
-        receiveResult PostponeMessage behavior
-    | _ -> 
-        receiveResult MessageRejected behavior
 
 
 (*     init & receive      *)
-
-
 
 let init class' id = 
     {
@@ -211,12 +211,17 @@ let init class' id =
     }
 
 let receive behavior message = 
-    match behavior.mode with
-    | Loading ->
-        receiveWhileLoading behavior message
+    behavior.mode |> function
+    | Loading -> message |> function
+        | LoadingMessage specific -> receiveWhileLoading behavior specific
+        | ReceivingMessage _ -> receiveResult PostponeMessage behavior
+        | _ -> receiveResult OutputMessage.messageRejected behavior
 
-    | Receiving ->
-        receiveWhileReceiving behavior message
+    | Receiving -> message |> function
+        | ReceivingMessage specific -> receiveWhileReceiving behavior specific
+        | _ -> receiveResult OutputMessage.messageRejected behavior
 
-    | Emitting ->
-        receiveWhileEmitting behavior message
+    | Emitting -> message |> function
+        | EmittingMessage specific -> receiveWhileEmitting behavior specific
+        | ReceivingMessage _ -> receiveResult PostponeMessage behavior
+        | _ -> receiveResult OutputMessage.messageRejected behavior
