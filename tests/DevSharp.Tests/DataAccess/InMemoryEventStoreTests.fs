@@ -1,16 +1,21 @@
 ﻿module ``In-memory event store tests``
 
 
-open NUnit.Framework
+open FSharp.Core
+open System
+open System.Reactive
+open System.Reactive.Linq
+open System.Reactive.Subjects
+open System.Threading
 open FsUnit
+open NUnit.Framework
+open NUnit.Framework.Constraints
+
+open DevSharp
+open DevSharp.DataAccess
 open DevSharp.Domain.Aggregates
 open DevSharp.Server.Domain
 open Samples.Domains.TodoList
-open DevSharp
-open DevSharp.DataAccess
-open NUnit.Framework.Constraints
-open FSharp.Core
-open System.Threading.Tasks
 
 
 let initTitle = "TodoList initial title"
@@ -50,26 +55,52 @@ let testSetup () =
 [<Test>] 
 let ``A new in-memory event store must be empty`` () =
     let store = InMemoryEventStore()
-    let list = new System.Collections.Generic.List<EventStoreCommit>()
-    let obs = observer 
-                (fun e -> list.Add(e))
-                (fun () -> list |> Seq.toList |> ASuccess)
-                (fun exn -> AFailure exn)
     let input = ReadCommitsInput.create request.aggregate
-    let events = (store.readCommits obs input).Result
-    do events |> should equal (ASuccess [])
+    do store.readCommits input |> shouldProduceList []
+
 
 [<Test>] 
 let ``A new in-memory event store must accept an event commit with one event`` () =
     let store = InMemoryEventStore()
     let events = [ WasCreated initTitle ] |> toEventList
-    let task = store.writeCommit (completion trueOnCompleted falseOnError) (WriteCommitInput.create request events None EventStoreCommit.newVersion)
-    let commit = { 
-        events = events
-        prevVersion = EventStoreCommit.newVersion
-        version = EventStoreCommit.newVersion + 1
-        request = request 
-    }
-    do task |> should not' (be Null)
-    do task.Result |> should be True
+    let input = WriteCommitInput.create request events None EventStoreCommit.newVersion
+    use waitHandle = new AutoResetEvent(false)
+    use write = 
+        (store.writeCommit input).Subscribe(
+            Common.NoOp1,
+            failWithExn "Observable should complete but failed with: ",
+            resetAutoResetEvent waitHandle)
+    do waitHandle.WaitOne(500) |> should be True
+
+    let commit = 
+        OnEventsCommit { 
+            events = events
+            prevVersion = EventStoreCommit.newVersion
+            version = EventStoreCommit.newVersion + 1
+            request = request 
+        }
+    let input = ReadCommitsInput.create request.aggregate
+    do store.readCommits input |> shouldProduceList [commit]
+
+[<Test>] 
+let ``A new in-memory event store must accept an event commit with one event and a snapshot`` () =
+    let store = InMemoryEventStore()
+    let events = [ WasCreated initTitle ] |> toEventList
+    let state = { title = initTitle; nextTaskId = 0; tasks = [] } :> StateType
+    let input = WriteCommitInput.create request events (Some state) EventStoreCommit.newVersion
+    use waitHandle = new AutoResetEvent(false)
+    use write = 
+        (store.writeCommit input).Subscribe(
+            Common.NoOp1,
+            failWithExn "Observable should complete but failed with: ",
+            resetAutoResetEvent waitHandle)
+    do waitHandle.WaitOne(500) |> should be True
+
+    let commit = 
+        OnSnapshotCommit { 
+            state = state
+            version = EventStoreCommit.newVersion + 1
+        }
+    let input = ReadCommitsInput.create request.aggregate
+    do store.readCommits input |> shouldProduceList [commit]
 

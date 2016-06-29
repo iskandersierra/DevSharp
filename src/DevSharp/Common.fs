@@ -4,11 +4,41 @@ module DevSharp.Common
 open System
 open FSharp.Core
 
-// Result
+
+let NoOp = fun () -> do ()
+let NoOp1 = fun a -> do ()
+let NoOp2 = fun a b -> do ()
+let idFun = fun x -> x
+
+
+// Option monad
+
+type OptionBuilder() =
+    member x.Bind(v,f) = Option.bind f v
+    member x.Return v = Some v
+    member x.ReturnFrom o = o
+
+let opt = OptionBuilder()
+
+// AResult
 
 type AResult<'a, 'b> =
 | ASuccess of 'a
 | AFailure of 'b
+
+// AResult monad
+
+type AResultBuilder() =
+    member x.Bind(partial, continueFunc) = 
+        match partial with
+        | AFailure exn -> partial
+        | ASuccess a -> 
+            try continueFunc a with
+            | exn -> AFailure exn
+    member x.Return v = ASuccess v
+    member x.ReturnFrom o = o
+
+let result = AResultBuilder()
 
 // Request definitions
 

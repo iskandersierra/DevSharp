@@ -4,6 +4,11 @@ open System
 open System.Linq
 open System.Collections.Generic
 open DevSharp
+open System.Reactive
+open System.Reactive.Linq
+open System.Reactive.Disposables
+
+//type Observable = System.Reactive.Linq.Observable
 
 type AggregateKey = TenantId * AggregateType * AggregateId
 type PersistedAggregate =
@@ -19,7 +24,7 @@ type InMemoryEventStore() =
     let aggregates = Dictionary<AggregateKey, PersistedAggregate> (16)
     let lockObj = obj ()
 
-    member __.readCommits (obs: ObserverFuncs<EventStoreCommit, 'a>) (input: ReadCommitsInput) = 
+    member __.readCommits (input: ReadCommitsInput) = 
         let tenantId = input.request.request.tenantId
         let aggregateType = input.request.aggregateType
         let aggregateId = input.request.aggregateId
@@ -42,32 +47,30 @@ type InMemoryEventStore() =
                                 |> List.toSeq
                     None, events
                 | Some state ->
-                    //let events =  Enumerable.Where (aggregate.events, eventsForRequest state.version)
                     let events = aggregate.events 
                                 |> Seq.filter (eventsForRequest state.version)
                                 |> Seq.toList
                                 |> List.toSeq
                     Some state, events
 
-        let task : Async<'a> = 
-            async {
-                let (state, events) = lock lockObj getCommits
-                do match state with
-                   | Some s -> obs.onNext (OnSnapshotCommit s)
-                   | _ -> do ()
-                do events |> Seq.iter (fun e -> obs.onNext (OnEventsCommit e))
-                return obs.onCompleted ()
-            }
-        Async.StartAsTask task
+        let (state, events) = lock lockObj getCommits
+
+        let stateS = state 
+                    |> function
+                        | Some s -> Observable.Return(OnSnapshotCommit s)
+                        | _ -> Observable.Empty()
+        let eventsS = events.ToObservable().Select OnEventsCommit
+        
+        stateS.Concat(eventsS)
 
 
-    member __.writeCommit (completion: CompletionFuncs<'a>) (input: WriteCommitInput) = 
+    member __.writeCommit (input: WriteCommitInput) = 
         let tenantId = input.request.aggregate.request.tenantId
         let aggregateType = input.request.aggregate.aggregateType
         let aggregateId = input.request.aggregate.aggregateId
         let key = tenantId, aggregateType, aggregateId
 
-        let writeCommit (completion: CompletionFuncs<'a>) () =
+        let writeCommit () =
             let found, foundAggregate = aggregates.TryGetValue key
 
             let aggregate = 
@@ -83,13 +86,13 @@ type InMemoryEventStore() =
 
             match input.expectedVersion = aggregate.version with
             | false -> 
-                completion.onError (Exception("Unexpected aggregate version while writing commit"))
+                AFailure "Unexpected aggregate version while writing commit"
 
             | true -> 
                 let commit = { 
                         events = input.events
-                        version = input.expectedVersion
-                        prevVersion = input.expectedVersion - input.events.Length
+                        version = aggregate.version + input.events.Length
+                        prevVersion = aggregate.version
                         request = input.request
                     }
 
@@ -116,24 +119,18 @@ type InMemoryEventStore() =
 
                 do aggregates.Item(key) <- newAggregate
 
-                completion.onCompleted ()
+                ASuccess ()
 
-        let task : Async<'a> = 
-            async {
-                return lock lockObj (writeCommit completion)
-            }
-        Async.StartAsTask task
-//
-//    member __.getAllAggregates () =
-//        let toTuple (pair: KeyValuePair<'a, 'b>) = pair.Key, pair.Value
-//        let toMap () = aggregates |> Seq.map toTuple |> Map.ofSeq
-//        lock lockObj toMap
+        match lock lockObj writeCommit with
+        | ASuccess _ -> Observable.Empty()
+        | AFailure message -> Observable.Throw (Exception(message))
+
     
     interface IEventStoreReader with
-        override this.readCommits obs input = 
-            this.readCommits obs input
+        override this.readCommits input = 
+            this.readCommits input
     
     interface IEventStoreWriter with
-        override this.writeCommit completion input =
-            this.writeCommit completion input
+        override this.writeCommit input =
+            this.writeCommit input
 

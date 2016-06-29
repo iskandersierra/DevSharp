@@ -32,9 +32,10 @@ type ReadCommitsInput =
 
 type IEventStoreReader =
     abstract member readCommits<'a> : 
-        obs: ObserverFuncs<EventStoreCommit, 'a> -> 
+        //obs: ObserverFuncs<EventStoreCommit, 'a> -> 
         input: ReadCommitsInput -> 
-        Task<'a>
+        //Task<'a>
+        IObservable<EventStoreCommit>
 
 type WriteCommitInput =
     {
@@ -48,6 +49,7 @@ type WriteCommitInput =
 
 type IEventStoreWriter =
     abstract member writeCommit<'a> : 
-        completion: CompletionFuncs<'a> ->
+        //completion: CompletionFuncs<'a> ->
         input: WriteCommitInput -> 
-        Task<'a>
+        //Task<'a>
+        IObservable<unit>
