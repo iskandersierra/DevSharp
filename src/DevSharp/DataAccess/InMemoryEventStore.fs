@@ -55,10 +55,10 @@ type InMemoryEventStore() =
 
         let (state, events) = lock lockObj getCommits
 
-        let stateS = state 
-                    |> function
-                        | Some s -> Observable.Return(OnSnapshotCommit s)
-                        | _ -> Observable.Empty()
+        let stateS = 
+            match state with
+            | Some s -> Observable.Return(OnSnapshotCommit s)
+            | _ -> Observable.Empty()
         let eventsS = events.ToObservable().Select OnEventsCommit
         
         stateS.Concat(eventsS)
@@ -84,11 +84,11 @@ type InMemoryEventStore() =
                     }
                 | true -> foundAggregate
 
-            match input.expectedVersion = aggregate.version with
-            | false -> 
+            match input.expectedVersion.IsSome && input.expectedVersion.Value <> aggregate.version with
+            | true -> 
                 AFailure "Unexpected aggregate version while writing commit"
 
-            | true -> 
+            | false -> 
                 let commit = { 
                         events = input.events
                         version = aggregate.version + input.events.Length

@@ -3,6 +3,7 @@ module DevSharp.Common
 
 open System
 open FSharp.Core
+open System.Collections.Generic
 
 
 let NoOp = fun () -> do ()
@@ -92,7 +93,7 @@ type AggregateRequest =
 type CommandRequest =
     {
         aggregate:        AggregateRequest
-        aggregateVersion: AggregateVersion
+        expectedVersion:  AggregateVersion option
         commandId:        CommandId
         commandType:      string
         processDate:      RequestDate
@@ -101,15 +102,25 @@ type CommandRequest =
 let getRequestProperty onFound onNotFound (key: string) (properties: PropertiesType) =
     match properties |> Map.tryFind key with
     | None -> onNotFound ()
-    | Some o ->
-        match o with
+    | Some o -> o |> function
         | :? 'a as result -> onFound result
+        | :? ('a option) as result -> 
+            result |> function
+            | None -> onNotFound()
+            | Some a -> onFound a
         | _ -> onNotFound ()
     
 let getRequestPropertyValue key properties =
     getRequestProperty
         (fun a -> Some a)
         (fun () -> None)
+        key
+        properties
+    
+let getRequestPropertyResult key properties =
+    getRequestProperty
+        (fun a -> ASuccess a)
+        (fun () -> AFailure (KeyNotFoundException (sprintf "Key %s was not found" key)))
         key
         properties
 
@@ -132,7 +143,7 @@ let toRequest (properties: PropertiesType) : Request option =
     | _ -> None
 
 let toAggregateRequest (properties: PropertiesType) : AggregateRequest option =
-    let request = properties |> toRequest
+    let request                             = properties |> toRequest
     let aggregateId:   AggregateId option   = properties |> getRequestPropertyValue AggregateIdConstant
     let aggregateType: AggregateType option = properties |> getRequestPropertyValue AggregateTypeConstant
     match request, aggregateId, aggregateType with
@@ -145,16 +156,16 @@ let toAggregateRequest (properties: PropertiesType) : AggregateRequest option =
     | _ -> None
 
 let toCommandRequest (properties: PropertiesType) : CommandRequest option =
-    let aggReq = properties |> toAggregateRequest
+    let aggReq                               = properties |> toAggregateRequest
     let aggVer:      AggregateVersion option = properties |> getRequestPropertyValue AggregateVersionConstant
     let commandId:   CommandId option        = properties |> getRequestPropertyValue CommandIdConstant
     let commandType: string option           = properties |> getRequestPropertyValue CommandTypeConstant
     let processDate: RequestDate option      = properties |> getRequestPropertyValue ProcessDateConstant
     match aggReq, aggVer, commandId, commandType, processDate with
-    | Some ar, Some aver, Some cid, Some ctp, Some pdt ->
+    | Some ar, aver, Some cid, Some ctp, Some pdt ->
         Some {
             aggregate = ar
-            aggregateVersion = aver
+            expectedVersion = aver
             commandId = cid
             commandType = ctp
             processDate = pdt

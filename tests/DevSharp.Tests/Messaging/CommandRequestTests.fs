@@ -27,7 +27,7 @@ let ``A fully loaded command request should have all its parameters with expecte
     let properties = 
         Map.empty
             .Add(AggregateIdConstant,      "my aggregate id" :> obj)
-            .Add(AggregateVersionConstant, 12345 :> obj)
+            .Add(AggregateVersionConstant, (Some 12345) :> obj)
             .Add(ApplicationIdConstant,    "my application id" :> obj)
             .Add(AggregateTypeConstant,    "my aggregate type" :> obj)
             .Add(ProjectIdConstant,        "my project id" :> obj)
@@ -41,10 +41,9 @@ let ``A fully loaded command request should have all its parameters with expecte
             .Add(ProcessDateConstant,      date3 :> obj)
 
     let request = toCommandRequest properties
-    request |> should not' (be Null)
     match request with
     | Some req ->
-        req.aggregateVersion |> should equal 12345
+        req.expectedVersion |> should equal (Some 12345)
         req.commandId |> should equal "my command id"
         req.processDate |> should equal date3
         req.commandId |> should equal "my command id"
@@ -57,3 +56,4 @@ let ``A fully loaded command request should have all its parameters with expecte
         req.aggregate.request.userId |> should equal "my user id"
         req.aggregate.request.clientDate |> should equal date1
         req.aggregate.request.apiDate |> should equal date2
+    | None -> Assert.Fail "This request should not be null"

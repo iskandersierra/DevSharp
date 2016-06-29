@@ -63,7 +63,7 @@ let ``A new in-memory event store must be empty`` () =
 let ``A new in-memory event store must accept an event commit with one event`` () =
     let store = InMemoryEventStore()
     let events = [ WasCreated initTitle ] |> toEventList
-    let input = WriteCommitInput.create request events None EventStoreCommit.newVersion
+    let input = WriteCommitInput.create request events None None
     use waitHandle = new AutoResetEvent(false)
     use write = 
         (store.writeCommit input).Subscribe(
@@ -87,7 +87,7 @@ let ``A new in-memory event store must accept an event commit with one event and
     let store = InMemoryEventStore()
     let events = [ WasCreated initTitle ] |> toEventList
     let state = { title = initTitle; nextTaskId = 0; tasks = [] } :> StateType
-    let input = WriteCommitInput.create request events (Some state) EventStoreCommit.newVersion
+    let input = WriteCommitInput.create request events (Some state) None
     use waitHandle = new AutoResetEvent(false)
     use write = 
         (store.writeCommit input).Subscribe(

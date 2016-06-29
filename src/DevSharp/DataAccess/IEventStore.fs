@@ -42,7 +42,7 @@ type WriteCommitInput =
         request: CommandRequest
         events: EventType list
         state: StateType option
-        expectedVersion: AggregateVersion
+        expectedVersion: AggregateVersion option
     }
     with static member create request events state expectedVersion = 
             { request = request; events = events; state = state; expectedVersion = expectedVersion }
