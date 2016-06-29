@@ -203,3 +203,4 @@ let observer onNext onCompleted onError =
         onCompleted = onCompleted
         onError = onError
     }
+        
