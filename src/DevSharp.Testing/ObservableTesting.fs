@@ -36,4 +36,13 @@ let shouldProduceListAction (action: 'a list -> unit) (obs: IObservable<'a>) =
     shouldProduceSingleAction action (obs.ToList().Select(Seq.toList))
 
 let shouldProduceList (list: 'a list) (obs: IObservable<'a>) = 
-    shouldProduceListAction (should equal list) obs
+    let currentList = Observable.When(obs.And(Observable.ToObservable list).Then(fun a b -> a, b))
+
+    use waitHandle = new AutoResetEvent(false)
+    use subscription = 
+        currentList.Subscribe(
+                (fun (current, expected) -> do current |> should equal expected),
+                (fun (ex: exn) -> do Assert.Fail("Observable should return a value but failed with: " + ex.Message)), 
+                (fun () -> do waitHandle.Set() |> ignore))
+
+    do waitHandle.WaitOne(500) |> should be True

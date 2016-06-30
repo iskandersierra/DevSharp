@@ -48,6 +48,18 @@ let toEventList list =
 let trueOnCompleted () = true
 let falseOnError exn = false
 
+let writeCommitHelper (request: CommandRequest) (events: EventType list) (state: StateType option) (version: AggregateVersion option) (store: InMemoryEventStore) =
+    let events = events |> toEventList
+    let input = WriteCommitInput.create request events state version
+    use waitHandle = new AutoResetEvent(false)
+    use write = 
+        (store.writeCommit input).Subscribe(
+            Common.NoOp1,
+            failWithExn "Observable should complete but failed with: ",
+            resetAutoResetEvent waitHandle)
+    do waitHandle.WaitOne(500) |> should be True
+    
+
 [<SetUp>]
 let testSetup () =
     TestContext.AddFormatter(ValueFormatterFactory(fun _ -> ValueFormatter(sprintf "%A")))
@@ -62,21 +74,14 @@ let ``A new in-memory event store must be empty`` () =
 [<Test>] 
 let ``A new in-memory event store must accept an event commit with one event`` () =
     let store = InMemoryEventStore()
-    let events = [ WasCreated initTitle ] |> toEventList
-    let input = WriteCommitInput.create request events None None
-    use waitHandle = new AutoResetEvent(false)
-    use write = 
-        (store.writeCommit input).Subscribe(
-            Common.NoOp1,
-            failWithExn "Observable should complete but failed with: ",
-            resetAutoResetEvent waitHandle)
-    do waitHandle.WaitOne(500) |> should be True
+    let events: EventType list = [ WasCreated initTitle ]
+    do writeCommitHelper request events None None store
 
     let commit = 
         OnEventsCommit { 
             events = events
-            prevVersion = EventStoreCommit.newVersion
-            version = EventStoreCommit.newVersion + 1
+            prevVersion = 0
+            version = 1
             request = request 
         }
     let input = ReadCommitsInput.create request.aggregate
@@ -85,22 +90,51 @@ let ``A new in-memory event store must accept an event commit with one event`` (
 [<Test>] 
 let ``A new in-memory event store must accept an event commit with one event and a snapshot`` () =
     let store = InMemoryEventStore()
-    let events = [ WasCreated initTitle ] |> toEventList
+    let events: EventType list = [ WasCreated initTitle ]
     let state = { title = initTitle; nextTaskId = 0; tasks = [] } :> StateType
-    let input = WriteCommitInput.create request events (Some state) None
-    use waitHandle = new AutoResetEvent(false)
-    use write = 
-        (store.writeCommit input).Subscribe(
-            Common.NoOp1,
-            failWithExn "Observable should complete but failed with: ",
-            resetAutoResetEvent waitHandle)
-    do waitHandle.WaitOne(500) |> should be True
+    do writeCommitHelper request events (Some state) None store
 
     let commit = 
         OnSnapshotCommit { 
             state = state
-            version = EventStoreCommit.newVersion + 1
+            version = 1
         }
     let input = ReadCommitsInput.create request.aggregate
     do store.readCommits input |> shouldProduceList [commit]
+
+[<Test>] 
+let ``A new in-memory event store must accept three event commits with snapshots and events`` () =
+    let store = InMemoryEventStore()
+    let events1: EventType list = [ WasCreated initTitle; TitleWasUpdated title ]
+    let events2: EventType list = [ TaskWasAdded (1, "task #1"); TaskWasAdded (2, "task #2") ]
+    let events3: EventType list = [ TaskWasUpdated (1, "new task #1"); TaskWasChecked 1 ]
+    let state2 = 
+        { 
+            title = title
+            nextTaskId = 0
+            tasks = 
+            [
+                { id = 1; text = "task #1"; isChecked = false }
+                { id = 2; text = "task #2"; isChecked = false }
+            ] 
+        } :> StateType
+    do writeCommitHelper request events1 None None store
+    do writeCommitHelper request events2 (Some state2) None store
+    do writeCommitHelper request events3 None None store
+
+    let commit2 = 
+        OnSnapshotCommit { 
+            state = state2
+            version = 4
+        }
+    let commit3 = 
+        OnEventsCommit { 
+            events = events3
+            prevVersion = 4
+            version = 6
+            request = request 
+        }
+
+    let input = ReadCommitsInput.create request.aggregate
+    do store.readCommits input |> shouldProduceList [commit2; commit3]
 

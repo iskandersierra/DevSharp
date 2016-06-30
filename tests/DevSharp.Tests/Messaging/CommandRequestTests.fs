@@ -27,7 +27,7 @@ let ``A fully loaded command request should have all its parameters with expecte
     let properties = 
         Map.empty
             .Add(AggregateIdConstant,      "my aggregate id" :> obj)
-            .Add(AggregateVersionConstant, (Some 12345) :> obj)
+            .Add(AggregateVersionConstant, 12345 :> obj)
             .Add(ApplicationIdConstant,    "my application id" :> obj)
             .Add(AggregateTypeConstant,    "my aggregate type" :> obj)
             .Add(ProjectIdConstant,        "my project id" :> obj)

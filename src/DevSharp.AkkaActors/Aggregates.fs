@@ -16,6 +16,9 @@ open DevSharp.Validations
 type InstanceActorMessage =
 | RequestMessage of input: InputMessage
 | ApplyEventsMessage of events: EventType list * req: CommandRequest * newBehavior: BehaviorState
+with 
+    static member requestMessage input = RequestMessage input
+    static member applyEventsMessage events request newBehavior = ApplyEventsMessage (events, request, newBehavior)
 
 type InstanceActor(reader: IEventStoreReader, writer: IEventStoreWriter, request, aggregateClass, aggregateId) =
     inherit UntypedActor()
@@ -47,8 +50,8 @@ type InstanceActor(reader: IEventStoreReader, writer: IEventStoreWriter, request
         let commitsS = request.aggregate |> ReadCommitsInput.create |> reader.readCommits
         let messagesS = 
             commitsS
-                |> DevObservable.selectMany mapCommitToInputMessage
-                |> DevObservable.select RequestMessage
+                |> Obs.selectMany mapCommitToInputMessage
+                |> Obs.select RequestMessage
 
         do messagesS.SubscribeSafe
             (Observer.Create(
@@ -76,15 +79,12 @@ type InstanceActor(reader: IEventStoreReader, writer: IEventStoreWriter, request
                         do ()
 
                     | EventsEmitted events ->
-                        let onCommitted () = 
-                            do self.Tell(ApplyEventsMessage (events, request, newBehavior), sender)
-                        let onError exn = 
-                            do sender <! Status.Failure exn
-                        let task = 
-                            writer.writeCommit 
-                                (completion onCommitted onError) 
-                                (WriteCommitInput.create request events None newBehavior.version)
-                        do task |> ignore
+                        do WriteCommitInput.create request events None (Some newBehavior.version)
+                        |> writer.writeCommit
+                        |> Obs.subscribeEnd 
+                            (fun exn -> do sender <! Status.Failure exn)
+                            (fun () -> do self.Tell(InstanceActorMessage.applyEventsMessage events request newBehavior, sender))
+                        |> ignore // ignore the subscription
                                 
 
                     | PostponeMessage ->
@@ -105,7 +105,7 @@ type InstanceActor(reader: IEventStoreReader, writer: IEventStoreWriter, request
 
 
                 | ApplyEventsMessage (events, request, newBehavior) ->
-                    let (ReceiveResult (output, yetNewBehavior)) = receive newBehavior (ApplyEvents (events, request))
+                    let (ReceiveResult (output, yetNewBehavior)) = receive newBehavior (InputMessage.applyEvents events request)
                     match output with
                     | SuccessMessage _ -> 
                         do behavior <- yetNewBehavior
