@@ -25,6 +25,10 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "DevSharp.Tests", "tests\Dev
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "DevSharp.Server.Tests", "tests\DevSharp.Server.Tests\DevSharp.Server.Tests.fsproj", "{43246191-17F9-4156-865A-7B5D225B7015}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "DevSharp.AkkaActors.Tests", "tests\DevSharp.AkkaActors.Tests\DevSharp.AkkaActors.Tests.fsproj", "{ADE1D7EE-4B82-4B8E-A8CD-3A861C565296}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "TestConsole", "tests\TestConsole\TestConsole.fsproj", "{91321FF1-900F-4A3F-8EB0-12C4EC107EF8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -63,6 +67,14 @@ Global
 		{43246191-17F9-4156-865A-7B5D225B7015}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{43246191-17F9-4156-865A-7B5D225B7015}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{43246191-17F9-4156-865A-7B5D225B7015}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ADE1D7EE-4B82-4B8E-A8CD-3A861C565296}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ADE1D7EE-4B82-4B8E-A8CD-3A861C565296}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ADE1D7EE-4B82-4B8E-A8CD-3A861C565296}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ADE1D7EE-4B82-4B8E-A8CD-3A861C565296}.Release|Any CPU.Build.0 = Release|Any CPU
+		{91321FF1-900F-4A3F-8EB0-12C4EC107EF8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{91321FF1-900F-4A3F-8EB0-12C4EC107EF8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{91321FF1-900F-4A3F-8EB0-12C4EC107EF8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{91321FF1-900F-4A3F-8EB0-12C4EC107EF8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -76,5 +88,7 @@ Global
 		{0F176FEA-618B-4765-B8EA-4DF269BA8B34} = {2B24CB07-6193-49ED-BF06-7CDE6C5F3D34}
 		{F6E4FD98-F52C-4F2B-BA53-A0B4F11E178E} = {A1CFA17D-A904-4A61-881C-A952EC40ED02}
 		{43246191-17F9-4156-865A-7B5D225B7015} = {A1CFA17D-A904-4A61-881C-A952EC40ED02}
+		{ADE1D7EE-4B82-4B8E-A8CD-3A861C565296} = {A1CFA17D-A904-4A61-881C-A952EC40ED02}
+		{91321FF1-900F-4A3F-8EB0-12C4EC107EF8} = {A1CFA17D-A904-4A61-881C-A952EC40ED02}
 	EndGlobalSection
 EndGlobal

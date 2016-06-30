@@ -29,7 +29,7 @@ and EmittingMessage  =
 
 type OutputMessage =
 | SuccessMessage    of SuccessMessage
-| EventsEmitted     of EventType list
+| EventsEmitted     of EventType list * CommandRequest
 | InvalidCommand    of ValidationResult
 | ExceptionMessage  of Exception * ExceptionMessage
 | RejectionMessage  of RejectionMessage
@@ -39,7 +39,7 @@ with
     static member messageAccepted           = SuccessMessage   MessageAccepted
     static member unexpectedVersion         = RejectionMessage UnexpectedVersion
     static member messageRejected           = RejectionMessage MessageRejected
-    static member eventsEmitted events      = EventsEmitted    events
+    static member eventsEmitted events req  = EventsEmitted    (events, req)
     static member invalidCommand validation = InvalidCommand   validation
     static member validateFailed exn        = ExceptionMessage (exn, ValidateFailed)
     static member actFailed exn             = ExceptionMessage (exn, ActFailed)
@@ -78,7 +78,7 @@ type ReceiveResult =
 | ReceiveResult of OutputMessage * BehaviorState
 
 let private receiveResult output behavior = ReceiveResult (output, behavior)
-let private eventsEmitted events behavior = receiveResult (OutputMessage.eventsEmitted events) behavior
+let private eventsEmitted events req behavior = receiveResult (OutputMessage.eventsEmitted events req) behavior
 let private invalidCommand result behavior = receiveResult (OutputMessage.invalidCommand result) behavior
 let private validateFailed ex behavior = receiveResult (OutputMessage.validateFailed ex) behavior
 let private actFailed ex behavior = receiveResult (OutputMessage.actFailed ex) behavior
@@ -185,7 +185,7 @@ let receiveWhileReceiving behavior message =
                 | ActOnCommandHasFailed ex -> 
                     actFailed ex behavior
                 | CommandWasActedOn events -> 
-                    eventsEmitted events { behavior with mode = Emitting }
+                    eventsEmitted events request { behavior with mode = Emitting }
                 | CommandWasNotActedOn -> 
                     invalidCommand (commandFailureResult "Command was not supposed to be received on current state") behavior
 

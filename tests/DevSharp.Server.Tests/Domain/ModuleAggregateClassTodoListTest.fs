@@ -1,13 +1,14 @@
 module DevSharp.Server.Domain.Tests.ModuleAggregateClassTodoListTest
 
 open NUnit.Framework
+open NUnit.Framework.Constraints
 open FsUnit
+
+open DevSharp
 open DevSharp.Domain.Aggregates
 open DevSharp.Server.Domain
-open Samples.Domains.TodoList
-open DevSharp
 open DevSharp.Server.ReflectionUtils
-open NUnit.Framework.Constraints
+open Samples.Domains.TodoList
 
 
 let initTitle = "TodoList initial title"
@@ -28,9 +29,9 @@ let properties =
         .Add(ClientDateConstant,       RequestDate.Now :> obj)
         .Add(ApiDateConstant,          RequestDate.Now :> obj)
         .Add(ProcessDateConstant,      RequestDate.Now :> obj)
+let request = (toCommandRequest properties).Value
 let aggregateModuleType = typedefof<Command>.DeclaringType
 let mutable aggregateClass = NopAggregateClass() :> IAggregateClass
-let request = (toCommandRequest properties).Value
 let createdState() = apply (WasCreated title) init
 
 [<SetUp>]

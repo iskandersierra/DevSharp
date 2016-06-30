@@ -1,12 +1,12 @@
 ﻿module ``In-memory event store tests``
 
 
-open FSharp.Core
 open System
 open System.Reactive
 open System.Reactive.Linq
 open System.Reactive.Subjects
 open System.Threading
+open FSharp.Core
 open FsUnit
 open NUnit.Framework
 open NUnit.Framework.Constraints
@@ -44,9 +44,6 @@ let request = (toCommandRequest properties).Value
 
 let toEventList list =
     list |> List.map (fun e -> e :> obj)
-
-let trueOnCompleted () = true
-let falseOnError exn = false
 
 let writeCommitHelper (request: CommandRequest) (events: EventType list) (state: StateType option) (version: AggregateVersion option) (store: InMemoryEventStore) =
     let events = events |> toEventList

@@ -1,11 +1,12 @@
 module DevSharp.AkkaActors.AggregateActors
 
-open Akka
-open Akka.Actor
-open Akka.FSharp
 open System
 open System.Reactive
 open System.Reactive.Linq
+open Akka
+open Akka.Actor
+open Akka.FSharp
+
 open DevSharp
 open DevSharp.DataAccess
 open DevSharp.Domain.Aggregates
@@ -20,10 +21,10 @@ with
     static member requestMessage input = RequestMessage input
     static member applyEventsMessage events request newBehavior = ApplyEventsMessage (events, request, newBehavior)
 
-type InstanceActor(reader: IEventStoreReader, writer: IEventStoreWriter, request, aggregateClass, aggregateId) =
+type InstanceActor(reader: IEventStoreReader, writer: IEventStoreWriter, aggregateRequest, aggregateClass) =
     inherit UntypedActor()
     
-    let mutable behavior = init aggregateClass aggregateId
+    let mutable behavior = init aggregateClass aggregateRequest.aggregateId
     let mutable stash : Akka.Actor.IStash = null
     
     static let exnToMessage exn = InputMessage.loadError exn |> RequestMessage
@@ -47,7 +48,7 @@ type InstanceActor(reader: IEventStoreReader, writer: IEventStoreWriter, request
     override this.PreStart() =
         let self = this.Self
 
-        let commitsS = request.aggregate |> ReadCommitsInput.create |> reader.readCommits
+        let commitsS = aggregateRequest |> ReadCommitsInput.create |> reader.readCommits
         let messagesS = 
             commitsS
                 |> Obs.selectMany mapCommitToInputMessage
@@ -78,7 +79,7 @@ type InstanceActor(reader: IEventStoreReader, writer: IEventStoreWriter, request
                     | SuccessMessage _ -> 
                         do ()
 
-                    | EventsEmitted events ->
+                    | EventsEmitted (events, request) ->
                         do WriteCommitInput.create request events None (Some newBehavior.version)
                         |> writer.writeCommit
                         |> Obs.subscribeEnd 
@@ -98,11 +99,6 @@ type InstanceActor(reader: IEventStoreReader, writer: IEventStoreWriter, request
 
                     | RejectionMessage _ ->
                         do sender <! Status.Failure (Exception())
-
-                    | _ -> 
-                        do sender <! Status.Failure (Exception()) // TODO: Change Status messages with custom ones
-                        do failwith (sprintf "Unxpected response type while RequestMessage is processing: %A" output)
-
 
                 | ApplyEventsMessage (events, request, newBehavior) ->
                     let (ReceiveResult (output, yetNewBehavior)) = receive newBehavior (InputMessage.applyEvents events request)

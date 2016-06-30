@@ -185,7 +185,7 @@ let ``When Aggregate behavior, while Loading, if it receive a ApplyEvents messag
 let ``When Aggregate behavior, while Receiving, if it receive a valid command, it should give a EventsEmitted response and go to Emitting state`` () =
     let events = [ Incremented; Incremented; Decremented; Incremented; ] 
     let (ReceiveResult (output, state)) = testReceiving events <| InputMessage.receiveCommand Increment 4 request
-    do output |> should equal <| EventsEmitted [ Incremented ]
+    do output |> should equal <| OutputMessage.eventsEmitted [ Incremented ] request
     do state |> should equal <| testingState Emitting 4 events
 
 [<Test>]
