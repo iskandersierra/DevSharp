@@ -6,6 +6,7 @@ open System.Reactive.Linq
 open Akka
 open Akka.Actor
 open Akka.FSharp
+open NLog;
 
 open DevSharp
 open DevSharp.DataAccess
@@ -23,6 +24,8 @@ with
 
 type InstanceActor(reader: IEventStoreReader, writer: IEventStoreWriter, aggregateRequest, aggregateClass) =
     inherit UntypedActor()
+
+    static let log = LogManager.GetLogger((typedefof<InstanceActor>).FullName)
     
     let mutable behavior = init aggregateClass aggregateRequest.aggregateId
     let mutable stash : Akka.Actor.IStash = null
@@ -38,6 +41,8 @@ type InstanceActor(reader: IEventStoreReader, writer: IEventStoreWriter, aggrega
             data.events 
             |> List.map (fun e -> InputMessage.loadEvent e data.request) 
             |> Observable.ToObservable
+    
+    do log.Trace ("Created")
 
 
     interface IWithUnboundedStash with
@@ -47,6 +52,7 @@ type InstanceActor(reader: IEventStoreReader, writer: IEventStoreWriter, aggrega
 
     override this.PreStart() =
         let self = this.Self
+        do log.Trace ("PreStart")
 
         let commitsS = aggregateRequest |> ReadCommitsInput.create |> reader.readCommits
         let messagesS = 
@@ -73,11 +79,10 @@ type InstanceActor(reader: IEventStoreReader, writer: IEventStoreWriter, aggrega
                     let (ReceiveResult (output, newBehavior)) = receive behavior input
 
                     match output with
-                    | SuccessMessage CommandDone ->
-                        do sender <! Status.Success ()
-
-                    | SuccessMessage _ -> 
-                        do ()
+                    | SuccessMessage successType ->
+                        match successType with
+                        | CommandDone -> do sender <! Status.Success ()
+                        | _ -> do ()
 
                     | EventsEmitted (events, request) ->
                         do WriteCommitInput.create request events None (Some newBehavior.version)
@@ -124,6 +129,7 @@ type InstanceActor(reader: IEventStoreReader, writer: IEventStoreWriter, aggrega
                         do stash.Unstash()
                     | _ -> 
                         do ()
+                do log.Trace (sprintf "OnReceive %A from %O stayed as %A" msg sender behavior)
 
             | _ -> 
                 do this.Unhandled()
