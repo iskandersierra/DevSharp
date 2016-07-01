@@ -13,10 +13,11 @@ open DevSharp
 open DevSharp.DataAccess
 open DevSharp.Domain.Aggregates
 open DevSharp.Server.Domain
-open Samples.Domains.TodoList
 open DevSharp.AkkaActors.AggregateActors
+open Samples.Domains.TodoList
 
 module TestInstanceActor =
+    open DevSharp.Domain.Aggregates.AggregateBehavior
 
     let initTitle = "TodoList initial title"
     let title = "TodoList new title"
@@ -79,7 +80,7 @@ module TestInstanceActor =
         let props = Props.Create<InstanceActor> (store , store, request.aggregate, aggregateClass)
                     
         let instance = system.ActorOf (props, "myTodoList")
-        let askTask = instance.Ask (InstanceActorMessage.requestMessage (AggregateBehavior.InputMessage.loadDone))
+        let askTask = instance.Ask (InputMessage.loadDone)
         let task = askTask.ContinueWith(fun (t: Task<obj>) -> printfn "Response message: %A" t.Result)
         do task.Wait (1000) |> ignore
         do printfn "press any key to continue ..."

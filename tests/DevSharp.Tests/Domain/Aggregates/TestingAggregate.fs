@@ -1,7 +1,10 @@
 ﻿module TestingAggregate
 
 open System
+open DevSharp
 open DevSharp.Annotations
+open DevSharp.DataAccess
+open DevSharp.Domain.Aggregates.AggregateBehavior
 open DevSharp.Validations.ValidationUtils
 
 
@@ -51,4 +54,3 @@ let testingValidate command =
         seq { yield memberFailure "id" "Id must be positive" }
     | _ -> 
         seq []
-

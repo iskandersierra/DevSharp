@@ -15,50 +15,27 @@ open DevSharp.Domain.Aggregates.AggregateBehavior
 open DevSharp.DataAccess
 open DevSharp.Validations
 
-type InstanceActorMessage =
-| RequestMessage of input: InputMessage
-| ApplyEventsMessage of events: EventType list * req: CommandRequest * newBehavior: BehaviorState
-with 
-    static member requestMessage input = RequestMessage input
-    static member applyEventsMessage events request newBehavior = ApplyEventsMessage (events, request, newBehavior)
-
 type InstanceActor(reader: IEventStoreReader, writer: IEventStoreWriter, aggregateRequest, aggregateClass) =
     inherit UntypedActor()
 
     static let log = LogManager.GetLogger((typedefof<InstanceActor>).FullName)
-    
-    let mutable behavior = init aggregateClass aggregateRequest.aggregateId
+
+    let mutable actorState = initialBehavior aggregateClass aggregateRequest.aggregateId
     let mutable stash : Akka.Actor.IStash = null
     
-    static let exnToMessage exn = InputMessage.loadError exn |> RequestMessage
-    static let doneMessage = InputMessage.loadDone |> RequestMessage
-
-    static let mapCommitToInputMessage =
-        function
-        | OnSnapshotCommit data -> 
-            InputMessage.loadState data.state data.version |> Observable.Return
-        | OnEventsCommit data -> 
-            data.events 
-            |> List.map (fun e -> InputMessage.loadEvent e data.request) 
-            |> Observable.ToObservable
+    let exnToMessage exn = 
+        InputMessage.loadError exn
+    let doneMessage = 
+        InputMessage.loadDone
     
     do log.Trace ("Created")
 
-
-    interface IWithUnboundedStash with
-        member this.Stash 
-            with get () = stash
-            and set value = stash <- value
 
     override this.PreStart() =
         let self = this.Self
         do log.Trace ("PreStart")
 
-        let commitsS = aggregateRequest |> ReadCommitsInput.create |> reader.readCommits
-        let messagesS = 
-            commitsS
-                |> Obs.selectMany mapCommitToInputMessage
-                |> Obs.select RequestMessage
+        let messagesS = readCurrentEvents reader aggregateRequest            
 
         do messagesS.SubscribeSafe
             (Observer.Create(
@@ -66,11 +43,41 @@ type InstanceActor(reader: IEventStoreReader, writer: IEventStoreWriter, aggrega
                 (fun exn -> self <! exnToMessage exn), 
                 (fun () -> self <! doneMessage))) 
            |> ignore
-        
 
     override this.OnReceive(msg: obj) =
         let self = this.Self
         let sender = this.Sender
+
+        let actions = {
+            new IAggregateActorActions with
+                member __.success () = 
+                    do sender <! Status.Success ()
+                
+                member __.reject result = 
+                    do sender <! Status.Failure (ValidationException result)
+                
+                member __.emit events request writing = 
+                    do writing
+                    |> Obs.subscribeEnd 
+                        (fun exn -> do sender <! Status.Failure exn)
+                        (fun () -> do self.Tell(InputMessage.applyEvents events request, sender))
+                    |> ignore // ignore the subscription
+                
+                member __.error kind msg = 
+                    do sender <! Status.Failure (Exception msg)
+                
+                member __.postpone () = 
+                    do stash.Stash()
+        }
+
+        do match msg with
+            | :? InputMessage as message ->
+                do actorState <- receive writer actions actorState message
+                // if Corrupted terminate actor?
+            | _ -> 
+                do this.Unhandled()
+        do ()
+        (*
         do 
             match msg with
             | :? InstanceActorMessage as message ->
@@ -79,9 +86,10 @@ type InstanceActor(reader: IEventStoreReader, writer: IEventStoreWriter, aggrega
                     let (ReceiveResult (output, newBehavior)) = receive behavior input
 
                     match output with
-                    | SuccessMessage successType ->
-                        match successType with
-                        | CommandDone -> do sender <! Status.Success ()
+                    | SuccessMessage successType -> 
+                        successType 
+                        |> function 
+                        | CommandDone -> do sender <! Status.Success () 
                         | _ -> do ()
 
                     | EventsEmitted (events, request) ->
@@ -133,4 +141,10 @@ type InstanceActor(reader: IEventStoreReader, writer: IEventStoreWriter, aggrega
 
             | _ -> 
                 do this.Unhandled()
+
+        *)
+    interface IWithUnboundedStash with
+        member this.Stash 
+            with get () = stash
+            and set value = stash <- value
 

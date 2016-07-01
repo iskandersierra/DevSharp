@@ -2,6 +2,8 @@
 
 
 open System
+open DevSharp
+open DevSharp.Domain.Aggregates.AggregateBehavior
 
 
 type UnionDef =
@@ -16,3 +18,8 @@ and UnionCaseDef =
     }
 
 
+[<AbstractClass>]
+type TestingMock<'Call>() =
+    let mutable _calls : 'Call list = []
+    member this.add c = do _calls <- _calls @ [ c ]
+    member this.calls = _calls

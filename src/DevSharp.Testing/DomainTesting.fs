@@ -2,13 +2,19 @@
 
 open System
 open System.Linq
-open NUnit.Framework
+open System.Reflection
+open System.Reactive
+open System.Reactive.Linq
 open FsUnit
 open FSharp.Reflection
-open System.Reflection
+open NUnit.Framework
+
 open DevSharp.Validations
 open DevSharp.Testing
 open DevSharp.Testing.Constraints
+open DevSharp
+open DevSharp.Domain.Aggregates.AggregateBehavior
+open DevSharp.DataAccess
 
 let aRecord   = IsRecordConstraint()
 let aUnion    = IsUnionConstraint()
@@ -53,3 +59,40 @@ let shouldBeAUnion (def: UnionDef) (atype: Type) =
 
     checkMatching matchingCases
     
+
+type TestingActionCall =
+    | Success
+    | Reject
+    | Emit of EventType list * CommandRequest * IObservable<unit>
+    | Error of ErrorResult
+    | Postpone
+
+type TestingActions() as this =
+    inherit TestingMock<TestingActionCall>()
+    
+    interface IAggregateActorActions with
+        member __.success ()                  = do this.add Success
+        member __.reject result               = do this.add Reject
+        member __.emit events request writing = do this.add (Emit (events, request, writing))
+        member __.error kind msg              = do this.add (Error kind)
+        member __.postpone ()                 = do this.add Postpone
+
+type TestingEventStoreCall =
+    | ReadCommit of ReadCommitsInput
+    | WriteCommit of WriteCommitInput
+
+type TestingEventStore(reader, writer) as this =
+    inherit TestingMock<TestingEventStoreCall>()
+
+    new (reader) = TestingEventStore(reader, (fun _ -> Observable.Empty()))
+    new (writer) = TestingEventStore((fun _ -> Observable.Empty()), writer)
+
+    interface IEventStoreReader with
+        member __.readCommits input = 
+            do this.add (ReadCommit input)
+            reader input
+
+    interface IEventStoreWriter with
+        member __.writeCommit input = 
+            do this.add (WriteCommit input)
+            writer input

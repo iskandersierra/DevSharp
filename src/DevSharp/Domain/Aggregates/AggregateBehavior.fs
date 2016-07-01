@@ -1,227 +1,232 @@
 ﻿module DevSharp.Domain.Aggregates.AggregateBehavior
 
 open System
+open System.Reactive
+open System.Reactive.Linq
 open DevSharp
+open DevSharp.DataAccess
 open DevSharp.Validations
 open DevSharp.Validations.ValidationUtils
 
-
 type InputMessage =
-| LoadingMessage   of LoadingMessage
-| ReceivingMessage of ReceivingMessage
-| EmittingMessage  of EmittingMessage
-with
-    static member loadState state version                        = LoadingMessage (LoadState (state, version))
-    static member loadEvent event request                        = LoadingMessage (LoadEvent (event, request))
-    static member loadError exn                                  = LoadingMessage (LoadError exn)
-    static member loadDone                                       = LoadingMessage (LoadDone)
-    static member receiveCommand command expectedVersion request = ReceivingMessage (ReceiveCommand (command, expectedVersion, request))
-    static member applyEvents events request                     = EmittingMessage (ApplyEvents (events, request))
+    | LoadingMessage   of LoadingMessage
+    | ReceivingMessage of ReceivingMessage
+    | EmittingMessage  of EmittingMessage
+    with
+        static member loadState state version                        = LoadingMessage (LoadState (state, version))
+        static member loadEvent event request                        = LoadingMessage (LoadEvent (event, request))
+        static member loadError exn                                  = LoadingMessage (LoadError exn)
+        static member loadDone                                       = LoadingMessage (LoadDone)
+        static member receiveCommand command expectedVersion request = ReceivingMessage (ReceiveCommand (command, expectedVersion, request))
+        static member applyEvents events request                     = EmittingMessage (ApplyEvents (events, request))
 and LoadingMessage   =
-| LoadState          of StateType * AggregateVersion
-| LoadEvent          of EventType * CommandRequest
-| LoadError          of Exception
-| LoadDone
+    | LoadState          of StateType * AggregateVersion
+    | LoadEvent          of EventType * CommandRequest
+    | LoadError          of Exception
+    | LoadDone
 and ReceivingMessage =
-| ReceiveCommand     of CommandType * AggregateVersion * CommandRequest
+    | ReceiveCommand     of CommandType * AggregateVersion option * CommandRequest
 and EmittingMessage  =
-| ApplyEvents        of EventType list * CommandRequest
+    | ApplyEvents        of EventType list * CommandRequest
 
-type OutputMessage =
-| SuccessMessage    of SuccessMessage
-| EventsEmitted     of EventType list * CommandRequest
-| InvalidCommand    of ValidationResult
-| ExceptionMessage  of Exception * ExceptionMessage
-| RejectionMessage  of RejectionMessage
-| PostponeMessage
-with
-    static member commandDone               = SuccessMessage   CommandDone
-    static member messageAccepted           = SuccessMessage   MessageAccepted
-    static member unexpectedVersion         = RejectionMessage UnexpectedVersion
-    static member messageRejected           = RejectionMessage MessageRejected
-    static member eventsEmitted events req  = EventsEmitted    (events, req)
-    static member invalidCommand validation = InvalidCommand   validation
-    static member validateFailed exn        = ExceptionMessage (exn, ValidateFailed)
-    static member actFailed exn             = ExceptionMessage (exn, ActFailed)
-    static member applyFailed exn           = ExceptionMessage (exn, ApplyFailed)
-    static member loadingFailed exn         = ExceptionMessage (exn, LoadingFailed)
-    static member postponeMessage           = PostponeMessage
-and SuccessMessage =
-| CommandDone
-| MessageAccepted
-and RejectionMessage =
-| UnexpectedVersion
-| MessageRejected
-and ExceptionMessage =
-| ValidateFailed
-| ActFailed
-| ApplyFailed
-| LoadingFailed
+
+type ErrorResult =
+    | UnexpectedVersion
+    | MessageRejected
+    | ValidateFailed
+    | ActFailed
+    | ApplyFailed
+    | LoadingFailed
 
 
 type Mode =
-| Loading
-| Receiving
-| Emitting
-
+    | Loading
+    | Receiving
+    | Emitting
+    | Corrupted
 
 type BehaviorState =
     {
         mode: Mode;
-        version: AggregateVersion;
-        id: AggregateId;
-        state: StateType;
-        class': IAggregateClass;
+        version: AggregateVersion
+        id: AggregateId
+        state: StateType
+        class': IAggregateClass
+        //pendingState: StateType option
     }
 
-type ReceiveResult =
-| ReceiveResult of OutputMessage * BehaviorState
 
-let private receiveResult output behavior = ReceiveResult (output, behavior)
-let private eventsEmitted events req behavior = receiveResult (OutputMessage.eventsEmitted events req) behavior
-let private invalidCommand result behavior = receiveResult (OutputMessage.invalidCommand result) behavior
-let private validateFailed ex behavior = receiveResult (OutputMessage.validateFailed ex) behavior
-let private actFailed ex behavior = receiveResult (OutputMessage.actFailed ex) behavior
-let private applyFailed ex behavior = receiveResult (OutputMessage.applyFailed ex) behavior
-let private loadingFailed ex behavior = receiveResult (OutputMessage.loadingFailed ex) behavior
-
+type IAggregateActorActions =
+    abstract member success   : unit                    -> unit
+    abstract member reject    : ValidationResult        -> unit
+    abstract member emit      : EventType list -> CommandRequest -> IObservable<unit> -> unit
+    abstract member error     : ErrorResult -> string   -> unit
+    abstract member postpone  : unit                    -> unit
 
 (*     Internal functions      *)
 
+let mapCommitToInputMessage =
+    function
+    | OnSnapshotCommit data -> 
+        InputMessage.loadState data.state data.version |> Observable.Return
+    | OnEventsCommit data -> 
+        data.events 
+        |> List.map (fun e -> InputMessage.loadEvent e data.request) 
+        |> Observable.ToObservable
 
-type ValidateCommandResult =
-| IsValidCommand of ValidationResult
-| IsInvalidCommand of ValidationResult
-| ValidationHasFailed of Exception
-
-let validateCommand behavior command request =
+let validateCommand onValid onInvalid onError behavior command request =
     try
         let result = behavior.class'.validate command request
         match result.isValid with
-        | true -> 
-            IsValidCommand result
-        | false -> 
-            IsInvalidCommand result
+        | true -> onValid ()
+        | false -> onInvalid result
     with 
-    | _ as ex -> 
-        ValidationHasFailed ex
+    | ex -> onError ex
 
-type ApplyEventResult =
-| EventWasApplied of BehaviorState
-| ApplyEventHasFailed of Exception
-
-let applyEvent behavior event request =
+let applyEvent onApplied onError behavior event request =
     try
         let newState = behavior.class'.apply event behavior.state request
-        EventWasApplied { 
+        let next = { 
             behavior with  
-                version = behavior.version + 1;
+                version = behavior.version + 1
                 state = newState;
-        }
+        } 
+        onApplied next
     with
-    | _ as ex -> ApplyEventHasFailed ex
+    | ex -> onError ex
 
-let rec applyEvents behavior events request =
+let rec applyEvents onApplied onError behavior events request =
     match events with
-    | [] -> EventWasApplied behavior
+    | [] -> onApplied behavior
     | event :: tail ->
-        match applyEvent behavior event request with
-        | ApplyEventHasFailed ex -> 
-            ApplyEventHasFailed ex
-        | EventWasApplied newState -> 
-            applyEvents newState tail request
+        let continuation next = applyEvents onApplied onError next tail request
+        applyEvent continuation onError behavior event request
 
-type ActOnCommandResult =
-| CommandWasActedOn of EventType list
-| CommandWasNotActedOn
-| ActOnCommandHasFailed of Exception
-
-let actOnCommand bahavior state command request =
+let actOnCommand onActed onNotActed onError bahavior state command request =
     try
         let maybeEvents = bahavior.class'.act command state request
         match maybeEvents with
-        | Some events -> 
-            CommandWasActedOn ( Seq.toList events )
-        | None -> 
-            CommandWasNotActedOn
+        | Some events -> onActed ( Seq.toList events )
+        | None -> onNotActed ()
     with
-    | _ as ex ->
-        ActOnCommandHasFailed ex
+    | ex -> onError ex
 
 
+(* receive functions *)
 
-let receiveWhileLoading behavior message =
+let receiveWhileLoading (actions: IAggregateActorActions) behavior message =
     match message with
     | LoadState (state, version) ->
-        if behavior.version = 0 
-        then receiveResult OutputMessage.messageAccepted { behavior with state = state; version = version }
-        else receiveResult OutputMessage.messageRejected behavior
+        match behavior.version with
+        | 0 -> { behavior with state = state; version = version }
+        | _ ->
+            do actions.error MessageRejected "Cannot load aggregate snapshot after some events has been already loaded"
+            behavior
 
     | LoadEvent (event, request) -> 
-        match applyEvent behavior event request with
-        | EventWasApplied newState -> 
-            receiveResult OutputMessage.messageAccepted newState
-        | ApplyEventHasFailed ex -> 
-            loadingFailed ex behavior
+        let onError (ex: exn) =
+            do actions.error ApplyFailed ex.Message
+            { behavior with mode = Corrupted }
+        applyEvent Common.idFun onError behavior event request
         
     | LoadError ex -> 
-        loadingFailed ex behavior
+        do actions.error ErrorResult.LoadingFailed ex.Message
+        { behavior with mode = Corrupted }
+
     | LoadDone -> 
-        receiveResult OutputMessage.messageAccepted { behavior with mode = Receiving }
+        { behavior with mode = Receiving }
 
-let receiveWhileReceiving behavior message =
-    match message with
+let receiveWhileReceiving (writer: IEventStoreWriter) (actions: IAggregateActorActions) behavior message =
+    match message with 
     | ReceiveCommand ( command, expectedVersion, request ) ->
-        if behavior.version <> expectedVersion
-        then receiveResult OutputMessage.unexpectedVersion behavior
+        if expectedVersion.IsSome && behavior.version <> expectedVersion.Value
+        then
+            do actions.error UnexpectedVersion (sprintf "Expected aggregate version was %d but %d found" expectedVersion.Value behavior.version)
+            behavior
         else
-            match validateCommand behavior command request with
-            | ValidationHasFailed ex -> 
-                validateFailed ex behavior
-            | IsInvalidCommand result -> 
-                invalidCommand result behavior
-            | IsValidCommand _ -> 
-                match actOnCommand behavior behavior.state command request with
-                | ActOnCommandHasFailed ex -> 
-                    actFailed ex behavior
-                | CommandWasActedOn events -> 
-                    eventsEmitted events request { behavior with mode = Emitting }
-                | CommandWasNotActedOn -> 
-                    invalidCommand (commandFailureResult "Command was not supposed to be received on current state") behavior
+            let onInvalid result =
+                do actions.reject result
+                behavior
+            let onActed events =
+                let writingS = 
+                    WriteCommitInput.create request events None None
+                    |> writer.writeCommit
+                do actions.emit events request writingS
+                { behavior with mode = Emitting }
+            let onNotActed () =
+                let text = sprintf "Command %A was not supposed to be received on current state" command
+                do actions.reject (ValidationResult.create [ Warning text ])
+                behavior
+            let onValidateError (exn: exn) = 
+                do actions.error ValidateFailed exn.Message
+                behavior
+            let onActError (exn: exn) = 
+                do actions.error ActFailed exn.Message
+                behavior
+            let act () =
+                actOnCommand onActed onNotActed onActError behavior behavior.state command request
 
-let receiveWhileEmitting behavior message =
+            validateCommand act onInvalid onValidateError behavior command request
+
+let receiveWhileEmitting (actions: IAggregateActorActions) behavior message =
     match message with
-    | ApplyEvents (events, request) -> 
-        match applyEvents behavior events request with
-        | EventWasApplied newState -> 
-            receiveResult OutputMessage.messageAccepted { newState with mode = Receiving }
-        | ApplyEventHasFailed ex -> 
-            applyFailed ex { behavior with mode = Receiving }
+    | ApplyEvents (events, request) ->
+        let onApplied newState =
+            { newState with mode = Receiving }
+        let onError (exn: exn) =
+            do actions.error ApplyFailed exn.Message
+            { behavior with mode = Receiving }
+        applyEvents onApplied onError behavior events request
 
+(*     public functions     *)
 
-(*     init & receive      *)
-
-let init class' id = 
+let initialBehavior class' id = 
     {
-        mode = Loading;
-        version = 0;
-        id = id;
-        class' = class';
-        state = class'.init;
+        mode = Loading
+        version = 0
+        id = id
+        class' = class'
+        state = class'.init
+        //pendingState = None
     }
 
-let receive behavior message = 
+let readCurrentEvents (reader: IEventStoreReader) aggregateRequest =
+    let commitsS = 
+        aggregateRequest 
+        |> ReadCommitsInput.create 
+        |> reader.readCommits
+
+    let messagesS = 
+        commitsS
+            |> Obs.selectMany mapCommitToInputMessage
+
+    messagesS
+
+let receive writer actions behavior message = 
     behavior.mode |> function
     | Loading -> message |> function
-        | LoadingMessage specific -> receiveWhileLoading behavior specific
-        | ReceivingMessage _ -> receiveResult PostponeMessage behavior
-        | _ -> receiveResult OutputMessage.messageRejected behavior
+        | LoadingMessage specific -> 
+            receiveWhileLoading actions behavior specific
+        | ReceivingMessage _ -> 
+            do actions.postpone ()
+            behavior
+        | _ -> 
+            do actions.error MessageRejected (sprintf "Cannot process message %A while loading events" message)
+            behavior
 
     | Receiving -> message |> function
-        | ReceivingMessage specific -> receiveWhileReceiving behavior specific
-        | _ -> receiveResult OutputMessage.messageRejected behavior
+        | ReceivingMessage specific -> 
+            receiveWhileReceiving writer actions behavior specific
+        | _ -> 
+            do actions.error MessageRejected (sprintf "Cannot process message %A while loading events" message)
+            behavior
 
     | Emitting -> message |> function
-        | EmittingMessage specific -> receiveWhileEmitting behavior specific
-        | ReceivingMessage _ -> receiveResult PostponeMessage behavior
-        | _ -> receiveResult OutputMessage.messageRejected behavior
+        | EmittingMessage specific -> 
+            receiveWhileEmitting actions behavior specific
+        | ReceivingMessage _ -> 
+            do actions.postpone ()
+            behavior
+        | _ -> 
+            do actions.error MessageRejected (sprintf "Cannot process message %A while loading events" message)
+            behavior
