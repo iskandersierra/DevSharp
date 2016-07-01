@@ -62,17 +62,24 @@ let someBehavior store actions = someBehavior2 store actions testingInit 0
 let testLoading store actions loadEvents message =  
     let messages = loadEvents |> List.map (fun e -> InputMessage.loadEvent e request)
     let behavior = someBehavior store actions messages
-    receive store actions behavior message 
+    match message with
+    | Some msg -> receive store actions behavior msg
+    | None -> behavior
 
 let testLoadingState store actions loadState loadVersion loadEvents message =  
     let messages = loadEvents |> List.map (fun e -> InputMessage.loadEvent e request)
     let behavior = someBehavior2 store actions loadState loadVersion messages 
-    receive store actions behavior message 
+    match message with
+    | Some msg -> receive store actions behavior msg
+    | None -> behavior
+
 
 let testReceiving store actions loadEvents message =  
     let messages = (loadEvents |> List.map (fun e -> InputMessage.loadEvent e request)) @ [ InputMessage.loadDone ]
     let behavior = someBehavior store actions messages 
-    receive store actions behavior message 
+    match message with
+    | Some msg -> receive store actions behavior msg
+    | None -> behavior
 
 let testEmitting store actions loadEvents command message =  
     let newMessages = [ 
@@ -82,7 +89,9 @@ let testEmitting store actions loadEvents command message =
     let loadMessages = loadEvents |> List.map (fun e -> InputMessage.loadEvent e request)
     let messages = loadMessages @ newMessages
     let behavior = someBehavior store actions messages
-    receive store actions behavior message 
+    match message with
+    | Some msg -> receive store actions behavior msg
+    | None -> behavior
 
 let testingApplyEvents events =  
     applyEvents3 aggregateClass.init aggregateClass.apply events request
@@ -92,9 +101,8 @@ let testingState mode version events =
         initBehavior() with 
             mode = mode
             version = version
-            state =  testingApplyEvents events
+            state = testingApplyEvents events
     }
-
 
 
 [<SetUp>]
@@ -120,7 +128,7 @@ let ``When Aggregate behavior, while Loading, if it receives a LoadEvent message
     // And no action should be received
     let store, actions = newStoreReader [], newActions ()
     let event = Incremented
-    let state = testLoading store actions [] <| InputMessage.loadEvent event request
+    let state = Some (InputMessage.loadEvent event request) |> testLoading store actions []
     let expectedState = testingState Loading 1 [ event ]
     do state |> should equal expectedState
     do actions.calls |> should equal []
@@ -135,7 +143,7 @@ let ``When Aggregate behavior, while Loading from version 0, if it receives a Lo
     let store, actions = newStoreReader [], newActions ()
     let events = [ Incremented; Incremented; Decremented; Incremented ]
     let snapshot = events |> List.fold (fun s e -> (testingApply e s)) testingInit
-    let state = testLoadingState store actions snapshot events.Length []
+    let state = testLoadingState store actions snapshot events.Length [] None
     let expectedState = testingState Loading (events |> List.length) events
     do state |> should equal expectedState
     do actions.calls |> should equal []
@@ -154,21 +162,24 @@ let ``When Aggregate behavior, while Loading from version 0, if it receives a Lo
     let events = [ Incremented; Incremented; Decremented; Incremented ]
     let snapshot = events |> List.fold (fun s e -> (testingApply e s)) testingInit
     let event = Incremented
-    let state = testLoadingState store actions snapshot events.Length [] <| InputMessage.loadEvent event request
+    let state = Some (InputMessage.loadEvent event request) |> testLoadingState store actions snapshot events.Length []
     do state |> should equal (testingState Loading 5 (events @ [ event ]))
     do actions.calls |> should equal []
 
 [<Test>]
-let ``When Aggregate behavior, while Loading from version 5, if it receives a LoadState message, it should Reject it and continue Loading`` () =
+let ``When Aggregate behavior, while Loading from version 4, if it receives a LoadState message, it should Reject it and continue Loading`` () =
+    // Given a store and actions
+    // And events [ inc, inc, dec, inc ] to load
+    // And a snapshot {+0,-0} to load after that
+    // When the snapshot is loaded
+    // And the event is loaded
+    // Then the state should be the same
+    // And a rejected messaje should be registered
     let store, actions = newStoreReader [], newActions ()
     let events = [ Incremented; Incremented; Decremented; Incremented; ] 
-    let midState = testLoading store actions events (InputMessage.loadEvent Incremented request)
-    let state = 
-        receive store actions
-        <| midState 
-        <| InputMessage.loadState midState.state midState.version 
-
-    do state |> should equal midState
+    let state = Some (InputMessage.loadEvent Incremented request) |> testLoading store actions events 
+    let sameState = receive store actions state (InputMessage.loadState state.state state.version)
+    do sameState |> should equal state
     do actions.calls |> should equal [ TestingActionCall.Error MessageRejected ]
 
 //[<Test>]
