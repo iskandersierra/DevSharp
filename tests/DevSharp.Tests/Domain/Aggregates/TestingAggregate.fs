@@ -10,17 +10,19 @@ open DevSharp.Validations.ValidationUtils
 
 [<AggregateEvent>]
 type TestingEvent = 
-| FailingEvent 
-| Incremented 
-| Decremented
+    | FailingEvent 
+    | Incremented 
+    | Decremented
 
 [<AggregateCommand>]
 type TestingCommand = 
-| FailingCommand 
-| Increment 
-| Decrement 
-| InvalidCommand 
-| NopCommand
+    | FailingCommand 
+    | Increment 
+    | Decrement 
+    | InvalidCommand 
+    | ValidateFailCommand
+    | NopCommand
+    | DoNotActCommand
 
 type TestingState = 
     { 
@@ -37,8 +39,10 @@ let testingAct command =
     | Increment -> Some [ Incremented ]
     | Decrement -> Some [ Decremented ]
     | NopCommand -> Some [ ]
-    | FailingCommand -> None
+    | FailingCommand -> raise (InvalidOperationException "Failing command")
     | InvalidCommand -> Some [ Incremented ]
+    | DoNotActCommand -> None
+    | ValidateFailCommand -> Some [ ]
 
 [<AggregateApply>]
 let testingApply event state = 
@@ -52,5 +56,7 @@ let testingValidate command =
     match command with
     | InvalidCommand -> 
         seq { yield memberFailure "id" "Id must be positive" }
+    | ValidateFailCommand -> 
+        raise (InvalidOperationException "Failing validate")
     | _ -> 
         seq []

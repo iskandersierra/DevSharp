@@ -15,6 +15,13 @@ open DevSharp.Domain.Aggregates.AggregateBehavior
 open DevSharp.DataAccess
 open DevSharp.Validations
 
+type InstanceActorInput =
+    {
+        command: CommandType
+        expectedVersion: AggregateVersion option
+        request: CommandRequest
+    }
+
 type InstanceActor(reader: IEventStoreReader, writer: IEventStoreWriter, aggregateRequest, aggregateClass) =
     inherit UntypedActor()
 
@@ -23,13 +30,10 @@ type InstanceActor(reader: IEventStoreReader, writer: IEventStoreWriter, aggrega
     let mutable actorState = initialBehavior aggregateClass aggregateRequest.aggregateId
     let mutable stash : Akka.Actor.IStash = null
     
-    let exnToMessage exn = 
-        InputMessage.loadError exn
-    let doneMessage = 
-        InputMessage.loadDone
+    let exnToMessage exn = InputMessage.loadError exn
+    let doneMessage = InputMessage.loadDone
     
     do log.Trace ("Created")
-
 
     override this.PreStart() =
         let self = this.Self
@@ -68,12 +72,19 @@ type InstanceActor(reader: IEventStoreReader, writer: IEventStoreWriter, aggrega
                 
                 member __.postpone () = 
                     do stash.Stash()
+                
+                member __.recover () = 
+                    do stash.UnstashAll()
         }
 
         do match msg with
             | :? InputMessage as message ->
                 do actorState <- receive writer actions actorState message
                 // if Corrupted terminate actor?
+            
+            | :? InstanceActorInput as input ->
+                do actorState <- receive writer actions actorState (InputMessage.receiveCommand input.command input.expectedVersion input.request)
+            
             | _ -> 
                 do this.Unhandled()
         do ()

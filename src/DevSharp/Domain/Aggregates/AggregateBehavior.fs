@@ -52,7 +52,6 @@ type BehaviorState =
         id: AggregateId
         state: StateType
         class': IAggregateClass
-        //pendingState: StateType option
     }
 
 
@@ -62,6 +61,7 @@ type IAggregateActorActions =
     abstract member emit      : EventType list -> CommandRequest -> IObservable<unit> -> unit
     abstract member error     : ErrorResult -> string   -> unit
     abstract member postpone  : unit                    -> unit
+    abstract member recover   : unit                    -> unit
 
 (*     Internal functions      *)
 
@@ -172,10 +172,11 @@ let receiveWhileEmitting (actions: IAggregateActorActions) behavior message =
     match message with
     | ApplyEvents (events, request) ->
         let onApplied newState =
+            do actions.recover ()
             { newState with mode = Receiving }
         let onError (exn: exn) =
             do actions.error ApplyFailed exn.Message
-            { behavior with mode = Receiving }
+            { behavior with mode = Corrupted }
         applyEvents onApplied onError behavior events request
 
 (*     public functions     *)
@@ -230,3 +231,7 @@ let receive writer actions behavior message =
         | _ -> 
             do actions.error MessageRejected (sprintf "Cannot process message %A while loading events" message)
             behavior
+
+    | Corrupted ->
+        do actions.error MessageRejected (sprintf "Cannot process message %A while corrupted" message)
+        behavior

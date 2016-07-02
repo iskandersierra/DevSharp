@@ -58,28 +58,32 @@ let shouldBeAUnion (def: UnionDef) (atype: Type) =
             checkMatching tail
 
     checkMatching matchingCases
+
+
     
 
 type TestingActionCall =
-    | Success
-    | Reject
-    | Emit of EventType list * CommandRequest * IObservable<unit>
-    | Error of ErrorResult
-    | Postpone
+    | SuccessCall
+    | RejectCall
+    | EmitCall of EventType list * CommandRequest
+    | ErrorCall of ErrorResult
+    | PostponeCall
+    | RecoverCall
 
 type TestingActions() as this =
     inherit TestingMock<TestingActionCall>()
     
     interface IAggregateActorActions with
-        member __.success ()                  = do this.add Success
-        member __.reject result               = do this.add Reject
-        member __.emit events request writing = do this.add (Emit (events, request, writing))
-        member __.error kind msg              = do this.add (Error kind)
-        member __.postpone ()                 = do this.add Postpone
+        member __.success ()                  = do this.add SuccessCall
+        member __.reject result               = do this.add RejectCall
+        member __.emit events request writing = do this.add (EmitCall (events, request))
+        member __.error kind msg              = do this.add (ErrorCall kind)
+        member __.postpone ()                 = do this.add PostponeCall
+        member __.recover ()                  = do this.add RecoverCall
 
 type TestingEventStoreCall =
-    | ReadCommit of ReadCommitsInput
-    | WriteCommit of WriteCommitInput
+    | ReadCommitCall of ReadCommitsInput
+    | WriteCommitCall of WriteCommitInput
 
 type TestingEventStore(reader, writer) as this =
     inherit TestingMock<TestingEventStoreCall>()
@@ -89,10 +93,10 @@ type TestingEventStore(reader, writer) as this =
 
     interface IEventStoreReader with
         member __.readCommits input = 
-            do this.add (ReadCommit input)
+            do this.add (ReadCommitCall input)
             reader input
 
     interface IEventStoreWriter with
         member __.writeCommit input = 
-            do this.add (WriteCommit input)
+            do this.add (WriteCommitCall input)
             writer input
