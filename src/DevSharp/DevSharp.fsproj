@@ -54,15 +54,8 @@
     <Compile Include="Dict.fs" />
     <Compile Include="Common.fs" />
     <Compile Include="Obs.fs" />
-    <Compile Include="Annotations\AggregateInitAttribute.fs" />
-    <Compile Include="Annotations\AggregateModuleAttribute.fs" />
-    <Compile Include="Annotations\AggregateEventAttribute.fs" />
-    <Compile Include="Annotations\AggregateCommandAttribute.fs" />
-    <Compile Include="Annotations\AggregateStateAttribute.fs" />
-    <Compile Include="Annotations\AggregateActAttribute.fs" />
-    <Compile Include="Annotations\AggregateApplyAttribute.fs" />
-    <Compile Include="Annotations\AggregateValidateAttribute.fs" />
-    <Compile Include="Annotations\InstanceProjectionModuleAttribute.fs" />
+    <Compile Include="Annotations\AggregateAttributes.fs" />
+    <Compile Include="Annotations\ProjectionAttributes.fs" />
     <Compile Include="Validations\ValidationResult.fs" />
     <Compile Include="Validations\ValidationUtils.fs" />
     <Compile Include="Serialization\SModels\SModels.fs" />
