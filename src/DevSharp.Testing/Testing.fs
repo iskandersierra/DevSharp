@@ -24,3 +24,4 @@ type TestingMock<'Call>() =
     member this.add c = do _calls <- _calls @ [ c ]
     member this.calls = _calls
     member this.clear () = _calls <- []
+

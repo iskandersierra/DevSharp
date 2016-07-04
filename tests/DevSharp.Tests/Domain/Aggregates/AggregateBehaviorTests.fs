@@ -56,40 +56,6 @@ let someBehavior store actions =
     someBehavior2 store actions testingInit 0
 
 let foldBehavior = List.fold (fun s e -> (testingApply e s)) testingInit
-//
-//let testLoading store actions loadEvents message =  
-//    let messages = loadEvents |> List.map (fun e -> InputMessage.loadEvent e request)
-//    let behavior = someBehavior store actions messages
-//    match message with
-//    | Some msg -> receive store actions behavior msg
-//    | None -> behavior
-//
-//let testLoadingState store actions loadState loadVersion loadEvents message =  
-//    let messages = loadEvents |> List.map (fun e -> InputMessage.loadEvent e request)
-//    let behavior = someBehavior2 store actions loadState loadVersion messages 
-//    match message with
-//    | Some msg -> receive store actions behavior msg
-//    | None -> behavior
-//
-//
-//let testReceiving store actions loadEvents message =  
-//    let messages = (loadEvents |> List.map (fun e -> InputMessage.loadEvent e request)) @ [ InputMessage.loadDone ]
-//    let behavior = someBehavior store actions messages 
-//    match message with
-//    | Some msg -> receive store actions behavior msg
-//    | None -> behavior
-//
-//let testEmitting store actions loadEvents command message =  
-//    let newMessages = [ 
-//        InputMessage.loadDone
-//        InputMessage.receiveCommand command (loadEvents |> List.length |> Some) request
-//    ]
-//    let loadMessages = loadEvents |> List.map (fun e -> InputMessage.loadEvent e request)
-//    let messages = loadMessages @ newMessages
-//    let behavior = someBehavior store actions messages
-//    match message with
-//    | Some msg -> receive store actions behavior msg
-//    | None -> behavior
 
 let testingApplyEvents events =  
     applyEvents3 aggregateClass.init aggregateClass.apply events request
@@ -583,3 +549,56 @@ let ``When Aggregate behavior, while Emitting, if it receives a LoadDone message
     do state |> should equal state2
     // And an error action should be registered with MessageRejected
     do actions.calls |> should equal [ ErrorCall MessageRejected ]
+
+
+(* readCurrentEvents *)
+
+[<Test>]
+let ``When an Aggregate is loaded and it has no stored events, then readCurrentEvents returns an empty commit observable`` () =
+    // Given an empty store
+    let store = newStoreReader []
+    // When an aggregate is loaded from the store
+    let messagesS = readCurrentEvents store request.aggregate
+    // Then the stored messages collection is empty
+    do messagesS.ToEnumerable() |> shouldBeSameSequence (seq [])
+
+[<Test>]
+let ``When an Aggregate is loaded and it has events stored, then readCurrentEvents returns the sequence of commited events`` () =
+    // Given a couple of event commits
+    let commits = [
+        OnEventsCommit { events = [ Incremented; Incremented ]; prevVersion = -1; version = 2; request = request }
+        OnEventsCommit { events = [ Decremented ]; prevVersion = 2; version = 3; request = request }
+    ]
+    // And a store with given events
+    let store = newStoreReader commits
+    // When an aggregate is loaded from the store
+    let messagesS = readCurrentEvents store request.aggregate
+    // Then the stored messages collection has the corresponding events
+    do messagesS.ToEnumerable() 
+        |> shouldBeSameSequence 
+            (seq [
+                InputMessage.loadEvent Incremented request
+                InputMessage.loadEvent Incremented request
+                InputMessage.loadEvent Decremented request
+            ])
+    
+[<Test>]
+let ``When an Aggregate is loaded and it has events + snapshot + events stored, then readCurrentEvents returns the sequence of commited snapshot + events`` () =
+    // Given a couple of event + snapshot commits
+    let commits = [
+        //OnEventsCommit { events = [ Incremented; Incremented ]; prevVersion = -1; version = 2; request = request }
+        OnSnapshotCommit { state = { incCount = 2; decCount = 0 }; version = 2 }
+        OnEventsCommit { events = [ Decremented; Incremented ]; prevVersion = 2; version = 4; request = request }
+    ]
+    // And a store with given events
+    let store = newStoreReader commits
+    // When an aggregate is loaded from the store
+    let messagesS = readCurrentEvents store request.aggregate
+    // Then the stored messages collection has the corresponding snapshot + events
+    do messagesS.ToEnumerable() 
+        |> shouldBeSameSequence 
+            (seq [
+                InputMessage.loadState { incCount = 2; decCount = 0 } 2
+                InputMessage.loadEvent Decremented request
+                InputMessage.loadEvent Incremented request
+            ])
